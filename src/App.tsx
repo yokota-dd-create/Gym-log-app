@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { supabase } from './lib/supabase';
 import './App.css';
 
 interface WorkoutSet {
@@ -7,7 +8,7 @@ interface WorkoutSet {
   exercise: string;
   weight: number;
   reps: number;
-  timestamp: string;
+  created_at: string;
 }
 
 const BODY_PARTS = ['胸', '背中', '脚', '肩', '腕'];
@@ -25,10 +26,29 @@ export default function App() {
   const [weight, setWeight] = useState<number>(60);
   const [reps, setReps] = useState<number>(10);
   const [logs, setLogs] = useState<WorkoutSet[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   // タイマー状態
   const [seconds, setSeconds] = useState<number>(0);
   const [isActive, setIsActive] = useState<boolean>(false);
+
+  // 初期ロード：Supabaseから記録一覧を取得
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const fetchLogs = async () => {
+    const { data, error } = await supabase
+      .from('workouts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching logs:', error);
+    } else if (data) {
+      setLogs(data);
+    }
+  };
 
   useEffect(() => {
     let interval: any = null;
@@ -46,18 +66,29 @@ export default function App() {
     setIsActive(true);
   };
 
-  const handleAddSet = () => {
-    const newLog: WorkoutSet = {
-      id: crypto.randomUUID(),
-      part: selectedPart,
-      exercise: selectedExercise,
-      weight,
-      reps,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-    setLogs([newLog, ...logs]);
-    // 記録完了時に自動で90秒タイマー始動
-    startTimer(90);
+  // Supabaseへデータを保存
+  const handleAddSet = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from('workouts')
+      .insert([
+        {
+          part: selectedPart,
+          exercise: selectedExercise,
+          weight,
+          reps
+        }
+      ])
+      .select();
+
+    setLoading(false);
+
+    if (error) {
+      alert('保存に失敗しました: ' + error.message);
+    } else if (data && data[0]) {
+      setLogs([data[0], ...logs]);
+      startTimer(90);
+    }
   };
 
   return (
@@ -138,19 +169,26 @@ export default function App() {
             />
           </div>
         </div>
-        <button className="btn-primary" onClick={handleAddSet}>
-          セット記録 & タイマースタート
+        <button
+          className="btn-primary"
+          onClick={handleAddSet}
+          disabled={loading}
+          style={{ opacity: loading ? 0.7 : 1 }}
+        >
+          {loading ? '保存中...' : 'セット記録 & タイマースタート'}
         </button>
       </div>
 
-      {/* 今日のログ一覧 */}
-      <h3 style={{ fontSize: 16, marginBottom: 12 }}>今日の記録 ({logs.length} セット)</h3>
+      {/* ログ一覧 */}
+      <h3 style={{ fontSize: 16, marginBottom: 12 }}>記録一覧 ({logs.length} セット)</h3>
       <div className="history-list">
-        {logs.map((log, index) => (
+        {logs.map(log => (
           <div key={log.id} className="history-item">
             <div>
               <span style={{ fontWeight: 'bold' }}>{log.exercise}</span>
-              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>{log.timestamp}</span>
+              <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>
+                {new Date(log.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </span>
             </div>
             <div style={{ fontWeight: 'bold', color: '#38bdf8' }}>
               {log.weight} kg × {log.reps} reps
