@@ -202,6 +202,7 @@ export const CalendarView: React.FC = () => {
     const estCal = Math.round((editSets.length * 12) + (totalVol * 0.015));
     const targetCats = Array.from(new Set(editSets.map((s) => s.category)));
 
+    
     // 1. workoutsテーブル更新
     await supabase
       .from('workouts')
