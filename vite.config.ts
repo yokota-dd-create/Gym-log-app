@@ -7,25 +7,34 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
+      },
       manifest: {
-        name: 'Gym Log Tracker',
+        name: 'GymLog',
         short_name: 'GymLog',
-        description: '筋トレ記録とレストタイマーを管理するワークアウトアプリ',
+        description: 'Gym Workout Tracker',
         theme_color: '#0f172a',
         background_color: '#0f172a',
-        display: 'standalone', // URLバーを隠してアプリのように全画面表示
-        orientation: 'portrait',
+        display: 'standalone',
         icons: [
           {
-            src: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png',
+            src: 'pwa-192x192.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'https://cdn-icons-png.flaticon.com/512/2964/2964514.png',
+            src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: 'pwa-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ]
       }
