@@ -11,7 +11,8 @@ import {
   CheckCircle2, 
   Circle, 
   Flame, 
-  Save
+  Save,
+  Calendar
 } from 'lucide-react';
 
 interface ActiveExerciseItem {
@@ -25,6 +26,9 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
   const [exercisesMaster, setExercisesMaster] = useState<Exercise[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<MuscleCategory | 'all'>('all');
   const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>([]);
+  
+  // ★ 記録する日付のステート（初期値は今日）
+  const [workoutDate, setWorkoutDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [restSeconds, setRestSeconds] = useState<number>(0);
   const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
@@ -187,13 +191,14 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     const durationMinutes = Math.max(1, Math.round((new Date().getTime() - startTime.getTime()) / 60000));
     const targetCategories = Array.from(new Set(activeExercises.map((ae) => ae.exercise.category)));
 
+    // ★ 保存時に、ユーザーが選択した workoutDate を送信する
     const { data: workout, error: wErr } = await supabase
       .from('workouts')
       .insert({
         target_categories: targetCategories,
         duration_minutes: durationMinutes,
         estimated_calories: estimatedCalories,
-        workout_date: new Date().toISOString().split('T')[0]
+        workout_date: workoutDate 
       })
       .select()
       .single();
@@ -225,6 +230,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     setSaving(false);
     alert('🎉 ワークアウトを記録しました！');
     setActiveExercises([]);
+    // 日付を今日にリセットしておく
+    setWorkoutDate(new Date().toISOString().split('T')[0]);
     if (onWorkoutSaved) onWorkoutSaved();
   };
 
@@ -263,17 +270,29 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         </div>
       </div>
 
+      {/* ★ 日付選択エリア */}
+      <div className="flex justify-end -mt-3 pr-1">
+        <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          <input
+            type="date"
+            value={workoutDate}
+            onChange={(e) => setWorkoutDate(e.target.value)}
+            className="bg-transparent text-sm font-bold text-slate-200 focus:outline-none"
+          />
+        </div>
+      </div>
+
       {/* 実施中のメニュー */}
       {activeExercises.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-sm font-bold text-slate-400 tracking-wider">本日の実施メニュー</h2>
+          <h2 className="text-sm font-bold text-slate-400 tracking-wider">実施メニュー</h2>
           {activeExercises.map((item, exIdx) => {
             const cat = CATEGORY_MAP[item.exercise.category];
             return (
               <div key={item.exercise.id} className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 space-y-3">
                 <div className="flex justify-between items-start">
                   <div className="flex items-center space-x-3">
-                    {/* 機器画像 / アイコン */}
                     <div className="w-10 h-10 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700 flex-shrink-0">
                       {item.exercise.image_url ? (
                         <img src={item.exercise.image_url} alt={item.exercise.name} className="w-full h-full object-cover" />
@@ -297,7 +316,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                   </button>
                 </div>
 
-                {/* Tips & メモ */}
                 {item.isNoteOpen && (
                   <div className="bg-slate-950/90 rounded-xl p-3 border border-slate-800 text-xs space-y-2.5">
                     {item.exercise.default_tips && (
@@ -322,7 +340,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                   </div>
                 )}
 
-                {/* セット一覧 */}
                 <div className="space-y-2">
                   <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-400 px-2">
                     <span className="col-span-2">SET</span>
@@ -405,7 +422,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
             className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 font-bold rounded-2xl shadow-lg shadow-emerald-950/50 flex items-center justify-center space-x-2 transition cursor-pointer text-white"
           >
             <Save className="w-5 h-5" />
-            <span>{saving ? '保存中...' : 'ワークアウトを終了・保存'}</span>
+            <span>{saving ? '保存中...' : '指定した日付でワークアウトを記録'}</span>
           </button>
         </div>
       )}
@@ -457,7 +474,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                 }`}
               >
                 <div className="flex items-center space-x-3">
-                  {/* 機器画像 / アイコン */}
                   <div className="w-11 h-11 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700 flex-shrink-0">
                     {ex.image_url ? (
                       <img src={ex.image_url} alt={ex.name} className="w-full h-full object-cover" />
