@@ -6,7 +6,6 @@ import {
   ChevronLeft, 
   ChevronRight, 
   Flame, 
-  Dumbbell, 
   Calendar as CalendarIcon, 
   Sparkles,
   Clock,
@@ -14,7 +13,6 @@ import {
   Edit2,
   X,
   Save,
-  Plus
 } from 'lucide-react';
 
 interface SetItem {
@@ -39,7 +37,6 @@ interface Recommendation {
 export const CalendarView: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [workouts, setWorkouts] = useState<WorkoutDetail[]>([]);
-  const [exercisesMaster, setExercisesMaster] = useState<Record<string, Exercise>>({});
   const [selectedDateWorkouts, setSelectedDateWorkouts] = useState<WorkoutDetail[]>([]);
   const [selectedDateStr, setSelectedDateStr] = useState<string>(new Date().toISOString().split('T')[0]);
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
@@ -60,7 +57,6 @@ export const CalendarView: React.FC = () => {
     (exData || []).forEach((ex: Exercise) => {
       exMap[ex.id] = ex;
     });
-    setExercisesMaster(exMap);
 
     // 2. ワークアウト記録 & セットのロード
     const year = currentDate.getFullYear();

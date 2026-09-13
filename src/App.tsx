@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import WorkoutLogger from './components/WorkoutLogger';
 import CalendarView from './components/CalendarView';
 import ExerciseDictionary from './components/ExerciseDictionary';
