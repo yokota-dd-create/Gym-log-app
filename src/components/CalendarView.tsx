@@ -21,7 +21,6 @@ export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDateWorkouts, setSelectedDateWorkouts] = useState<any[]>([]);
 
-  // ★ 編集用のステート
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
   const [editState, setEditState] = useState<Record<string, {weight: string, reps: string}>>({});
 
@@ -84,7 +83,6 @@ export const CalendarView = () => {
     }
   };
 
-  // ★ 編集開始処理
   const handleStartEdit = (workout: any) => {
     const initialState: Record<string, {weight: string, reps: string}> = {};
     workout.sets.forEach((s: any) => {
@@ -97,13 +95,11 @@ export const CalendarView = () => {
     setEditingWorkoutId(workout.id);
   };
 
-  // ★ 編集キャンセル処理
   const handleCancelEdit = () => {
     setEditingWorkoutId(null);
     setEditState({});
   };
 
-  // ★ 編集中の入力検知
   const handleSetChange = (setId: string, field: 'weight' | 'reps', value: string) => {
     setEditState(prev => ({
       ...prev,
@@ -111,7 +107,6 @@ export const CalendarView = () => {
     }));
   };
 
-  // ★ 編集の保存処理
   const handleSaveEdit = async () => {
     const promises = Object.entries(editState).map(([setId, vals]) => {
       return supabase
@@ -125,7 +120,6 @@ export const CalendarView = () => {
 
     await Promise.all(promises);
 
-    // 保存後、再読み込みして最新状態を反映
     if (selectedDate) {
       handleDateClick(selectedDate.getDate());
     }
@@ -164,8 +158,6 @@ export const CalendarView = () => {
     });
 
     setSelectedDate(clickedDate);
-    
-    // 他の日付を開いたら編集モードを解除
     setEditingWorkoutId(null);
     
     if (dateWorkouts.length > 0) {
@@ -332,11 +324,10 @@ export const CalendarView = () => {
                                   </>
                                 )}
                                 
-                                {/* ★ 編集・保存・削除ボタンの切り替え */}
                                 {isEditing ? (
                                   <>
                                     <button 
-                                      onClick={() => handleSaveEdit()}
+                                      onClick={handleSaveEdit}
                                       className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
                                       title="保存"
                                     >
@@ -372,41 +363,55 @@ export const CalendarView = () => {
                             )}
                           </div>
 
-                          <div className="flex flex-wrap gap-1">
+                          {/* ★ 横並びから、1行ずつの縦並びリストに変更 */}
+                          <div className="space-y-1.5 mt-2">
                             {group.sets.map((s: any, sIdx: number) => {
-                              // ★ 編集モード時の入力ボックス表示
                               if (isEditing) {
                                 const eState = editState[s.id] || { weight: '', reps: '' };
                                 return (
-                                  <div key={sIdx} className="bg-slate-950 rounded px-1.5 py-0.5 flex items-center border border-cyan-700/50">
-                                    <input 
-                                      type="number" 
-                                      step="0.5"
-                                      value={eState.weight}
-                                      onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
-                                      className="w-8 bg-transparent text-slate-200 text-[10px] font-bold text-right focus:outline-none placeholder-slate-600"
-                                      placeholder="0"
-                                    />
-                                    <span className="text-[10px] text-slate-500 mx-0.5">kg ×</span>
-                                    <input 
-                                      type="number" 
-                                      value={eState.reps}
-                                      onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
-                                      className="w-6 bg-transparent text-slate-200 text-[10px] font-bold text-center focus:outline-none placeholder-slate-600"
-                                      placeholder="0"
-                                    />
+                                  <div key={sIdx} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 border border-cyan-700/50 shadow-inner">
+                                    <span className="text-xs font-mono font-bold text-cyan-600 w-8">#{sIdx + 1}</span>
+                                    <div className="flex items-center space-x-1">
+                                      <input 
+                                        type="number" 
+                                        step="0.5"
+                                        value={eState.weight}
+                                        onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
+                                        className="w-16 bg-slate-900 border border-slate-700 text-center rounded-md py-1 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
+                                        placeholder="0"
+                                      />
+                                      <span className="text-[10px] text-slate-500 w-4">kg</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1">
+                                      <input 
+                                        type="number" 
+                                        value={eState.reps}
+                                        onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
+                                        className="w-16 bg-slate-900 border border-slate-700 text-center rounded-md py-1 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
+                                        placeholder="0"
+                                      />
+                                      <span className="text-[10px] text-slate-500 w-4">回</span>
+                                    </div>
                                   </div>
                                 );
                               }
                               
-                              // 通常時の表示
                               return (
-                                <div key={sIdx} className="bg-slate-900 rounded px-1.5 py-0.5 text-[10px] text-slate-400 border border-slate-800">
-                                  <span className="text-slate-300 font-bold">{s.weight_kg}</span>kg × <span className="text-slate-300 font-bold">{s.reps}</span>
+                                <div key={sIdx} className="flex items-center justify-between bg-slate-900/60 rounded-lg px-4 py-2 border border-slate-800/80">
+                                  <span className="text-xs font-mono font-bold text-slate-500 w-8">#{sIdx + 1}</span>
+                                  <div className="flex items-baseline space-x-1 w-20 justify-end">
+                                    <span className="text-sm font-bold text-slate-200">{s.weight_kg}</span>
+                                    <span className="text-[10px] text-slate-500">kg</span>
+                                  </div>
+                                  <div className="flex items-baseline space-x-1 w-20 justify-end">
+                                    <span className="text-sm font-bold text-slate-200">{s.reps}</span>
+                                    <span className="text-[10px] text-slate-500">回</span>
+                                  </div>
                                 </div>
                               );
                             })}
                           </div>
+
                         </div>
                       ));
                     })()}
