@@ -172,6 +172,16 @@ export const CalendarView = () => {
 
     await Promise.all(promises);
 
+    const activeSets = editingSets.filter(s => !s.is_deleted);
+    const totalWeightVolume = activeSets.reduce((sum, s) => sum + (Number(s.weight) * Number(s.reps)), 0);
+    const completedSetsCount = activeSets.length;
+    const newCalories = Math.round((completedSetsCount * 12) + (totalWeightVolume * 0.015));
+
+    await supabase
+      .from('workouts')
+      .update({ estimated_calories: newCalories })
+      .eq('id', editingWorkoutId);
+
     if (selectedDate) {
       handleDateClick(selectedDate.getDate());
     }
@@ -372,14 +382,12 @@ export const CalendarView = () => {
                                       <button 
                                         onClick={handleSaveEdit}
                                         className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
-                                        title="保存"
                                       >
                                         <Save className="w-3.5 h-3.5" />
                                       </button>
                                       <button 
                                         onClick={handleCancelEdit}
                                         className="p-1.5 ml-1 text-slate-400 hover:text-slate-300 transition bg-slate-900/50 rounded-md border border-slate-700/50"
-                                        title="キャンセル"
                                       >
                                         <X className="w-3.5 h-3.5" />
                                       </button>
@@ -389,14 +397,12 @@ export const CalendarView = () => {
                                       <button 
                                         onClick={() => handleStartEdit(workout)}
                                         className="p-1.5 ml-1 text-cyan-400 hover:text-cyan-300 transition bg-cyan-900/30 rounded-md border border-cyan-700/50"
-                                        title="編集"
                                       >
                                         <Pencil className="w-3.5 h-3.5" />
                                       </button>
                                       <button 
                                         onClick={() => handleDeleteWorkout(workout.id)}
                                         className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
-                                        title="削除"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -406,69 +412,70 @@ export const CalendarView = () => {
                               )}
                             </div>
 
-                            {/* ★ セットのリスト表示（中央寄せの統一レイアウト） */}
+                            {/* ★ スケルトン（骨組み）を完全に一致させた行レイアウト */}
                             <div className="space-y-1.5 mt-2">
                               {setsToRender.map((s: any, sIdx: number) => {
-                                if (isEditing) {
-                                  // ★ 編集モード
-                                  return (
-                                    <div key={s.id} className="flex items-center bg-slate-950/80 rounded-lg px-3 py-1.5 border border-cyan-800/60 shadow-inner">
-                                      <div className="w-8 flex-shrink-0">
-                                        <span className="text-xs font-mono font-bold text-cyan-600">#{sIdx + 1}</span>
-                                      </div>
-                                      
-                                      <div className="flex flex-1 items-center justify-center space-x-6">
-                                        <div className="flex items-center">
+                                const rowKey = isEditing ? s.id : sIdx;
+                                const baseRowClasses = "flex items-center justify-between rounded-lg px-3 py-1.5 border transition-colors";
+                                const modeClasses = isEditing 
+                                  ? "bg-slate-950/80 border-cyan-800/60 shadow-inner" 
+                                  : "bg-slate-900/50 border-slate-800/80";
+
+                                return (
+                                  <div key={rowKey} className={`${baseRowClasses} ${modeClasses}`}>
+                                    {/* 1. セット番号 */}
+                                    <div className="w-8 flex-shrink-0">
+                                      <span className={`text-xs font-mono font-bold ${isEditing ? 'text-cyan-600' : 'text-slate-500'}`}>
+                                        #{sIdx + 1}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* 2. 重量と回数（中央寄せ） */}
+                                    <div className="flex flex-1 items-center justify-center space-x-6">
+                                      <div className="flex items-center justify-end w-20">
+                                        {isEditing ? (
                                           <input 
                                             type="number" step="0.5" value={s.weight}
                                             onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
                                             className="w-14 bg-slate-900 border border-slate-700 text-right rounded-md py-1 px-2 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
                                             placeholder="0"
                                           />
-                                          <span className="text-[10px] text-slate-500 font-medium ml-1.5">kg</span>
-                                        </div>
-                                        <div className="flex items-center">
+                                        ) : (
+                                          <span className="w-14 text-right py-1 px-2 text-sm font-bold text-slate-200">
+                                            {s.weight_kg}
+                                          </span>
+                                        )}
+                                        <span className="text-[10px] text-slate-500 font-medium ml-1.5 w-4">kg</span>
+                                      </div>
+
+                                      <div className="flex items-center justify-end w-16">
+                                        {isEditing ? (
                                           <input 
                                             type="number" value={s.reps}
                                             onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
                                             className="w-12 bg-slate-900 border border-slate-700 text-right rounded-md py-1 px-2 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
                                             placeholder="0"
                                           />
-                                          <span className="text-[10px] text-slate-500 font-medium ml-1.5">回</span>
-                                        </div>
+                                        ) : (
+                                          <span className="w-12 text-right py-1 px-2 text-sm font-bold text-slate-200">
+                                            {s.reps}
+                                          </span>
+                                        )}
+                                        <span className="text-[10px] text-slate-500 font-medium ml-1.5 w-4">回</span>
                                       </div>
+                                    </div>
 
-                                      <div className="w-8 flex-shrink-0 flex justify-end">
+                                    {/* 3. 右端のゴミ箱 or 空白 */}
+                                    <div className="w-8 flex-shrink-0 flex justify-end">
+                                      {isEditing && (
                                         <button 
                                           onClick={() => handleRemoveEditSet(s.id)}
-                                          className="p-1.5 bg-red-950/40 border border-red-900/60 text-red-400 hover:text-red-300 hover:bg-red-900/60 rounded-md transition"
+                                          className="p-1.5 bg-red-950/40 border border-red-900/60 text-red-400 hover:text-red-300 hover:bg-red-900/60 rounded-md transition cursor-pointer"
                                         >
                                           <Trash2 className="w-4 h-4" />
                                         </button>
-                                      </div>
+                                      )}
                                     </div>
-                                  );
-                                }
-                                
-                                // ★ 通常モード
-                                return (
-                                  <div key={sIdx} className="flex items-center bg-slate-800/30 rounded-lg px-3 py-2 border border-slate-700/30">
-                                    <div className="w-8 flex-shrink-0">
-                                      <span className="text-xs font-mono font-bold text-slate-500">#{sIdx + 1}</span>
-                                    </div>
-                                    
-                                    <div className="flex flex-1 items-center justify-center space-x-6">
-                                      <div className="flex items-baseline">
-                                        <span className="text-sm font-bold text-slate-200 w-14 text-right pr-2">{s.weight_kg}</span>
-                                        <span className="text-[10px] text-slate-500 font-medium">kg</span>
-                                      </div>
-                                      <div className="flex items-baseline">
-                                        <span className="text-sm font-bold text-slate-200 w-12 text-right pr-2">{s.reps}</span>
-                                        <span className="text-[10px] text-slate-500 font-medium">回</span>
-                                      </div>
-                                    </div>
-
-                                    <div className="w-8 flex-shrink-0"></div>
                                   </div>
                                 );
                               })}
@@ -477,7 +484,7 @@ export const CalendarView = () => {
                             {isEditing && (
                               <button
                                 onClick={() => handleAddEditSet(group.exercise_id)}
-                                className="w-full mt-2 py-1.5 border border-dashed border-cyan-700/50 rounded-lg text-cyan-500 flex items-center justify-center hover:bg-cyan-900/30 transition"
+                                className="w-full mt-2 py-1.5 border border-dashed border-cyan-700/50 rounded-lg text-cyan-500 flex items-center justify-center hover:bg-cyan-900/30 transition cursor-pointer"
                               >
                                 <Plus className="w-4 h-4" />
                               </button>
