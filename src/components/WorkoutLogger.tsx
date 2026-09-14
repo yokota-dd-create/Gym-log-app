@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import type { Exercise, WorkoutSet, MuscleCategory } from '../types/database';
+import type { Exercise, MuscleCategory } from '../types/database';
 import { CATEGORY_MAP } from '../types/database';
 import { 
   Dumbbell, 
@@ -15,9 +15,18 @@ import {
   Calendar
 } from 'lucide-react';
 
+// ★ 入力中は空欄（文字列）も許容するための専用の型を定義
+interface LocalWorkoutSet {
+  exercise_id: string;
+  set_number: number;
+  weight_kg: number | string;
+  reps: number | string;
+  is_completed: boolean;
+}
+
 interface ActiveExerciseItem {
   exercise: Exercise;
-  sets: WorkoutSet[];
+  sets: LocalWorkoutSet[];
   userNote: string;
   isNoteOpen: boolean;
 }
@@ -26,8 +35,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
   const [exercisesMaster, setExercisesMaster] = useState<Exercise[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<MuscleCategory | 'all'>('all');
   const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>([]);
-  
-  // ★ 記録する日付のステート（初期値は今日）
   const [workoutDate, setWorkoutDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
   const [restSeconds, setRestSeconds] = useState<number>(0);
@@ -91,7 +98,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         userNote: exercise.user_note || '',
         isNoteOpen: false,
         sets: [
-          { exercise_id: exercise.id, set_number: 1, weight_kg: 20, reps: 10, is_completed: false }
+          // ★ 最初から空欄（''）にして入力しやすくする
+          { exercise_id: exercise.id, set_number: 1, weight_kg: '', reps: '', is_completed: false }
         ]
       }
     ]);
@@ -110,11 +118,11 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       prev.map((item, idx) => {
         if (idx !== exerciseIndex) return item;
         const lastSet = item.sets[item.sets.length - 1];
-        const nextSet: WorkoutSet = {
+        const nextSet: LocalWorkoutSet = {
           exercise_id: item.exercise.id,
           set_number: item.sets.length + 1,
-          weight_kg: lastSet ? lastSet.weight_kg : 20,
-          reps: lastSet ? lastSet.reps : 10,
+          weight_kg: lastSet ? lastSet.weight_kg : '',
+          reps: lastSet ? lastSet.reps : '',
           is_completed: false
         };
         return { ...item, sets: [...item.sets, nextSet] };
@@ -122,7 +130,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     );
   };
 
-  const handleUpdateSet = (exerciseIndex: number, setIndex: number, field: 'weight_kg' | 'reps', value: number) => {
+  // ★ 入力値をそのまま（文字列として）受け取るように変更
+  const handleUpdateSet = (exerciseIndex: number, setIndex: number, field: 'weight_kg' | 'reps', value: string) => {
     setActiveExercises((prev) =>
       prev.map((item, idx) => {
         if (idx !== exerciseIndex) return item;
@@ -171,8 +180,9 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       .upsert({ exercise_id: exerciseId, note: noteText, updated_at: new Date().toISOString() });
   };
 
+  // ★ 計算時に強制的に数値（Number）に変換する処理を追加
   const totalWeightVolume = activeExercises.reduce((total, item) => {
-    return total + item.sets.filter((s) => s.is_completed).reduce((sTotal, s) => sTotal + (s.weight_kg * s.reps), 0);
+    return total + item.sets.filter((s) => s.is_completed).reduce((sTotal, s) => sTotal + (Number(s.weight_kg) * Number(s.reps)), 0);
   }, 0);
 
   const completedSetsCount = activeExercises.reduce((total, item) => {
@@ -191,7 +201,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     const durationMinutes = Math.max(1, Math.round((new Date().getTime() - startTime.getTime()) / 60000));
     const targetCategories = Array.from(new Set(activeExercises.map((ae) => ae.exercise.category)));
 
-    // ★ 保存時に、ユーザーが選択した workoutDate を送信する
     const { data: workout, error: wErr } = await supabase
       .from('workouts')
       .insert({
@@ -209,15 +218,16 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       return;
     }
 
-    const allSets: WorkoutSet[] = [];
+    const allSets = [];
     activeExercises.forEach((item) => {
       item.sets.filter((s) => s.is_completed).forEach((s) => {
         allSets.push({
           workout_id: workout.id,
           exercise_id: s.exercise_id,
           set_number: s.set_number,
-          weight_kg: Number(s.weight_kg),
-          reps: Number(s.reps),
+          // ★ データベース保存時に、空文字なら0として保存する
+          weight_kg: Number(s.weight_kg) || 0,
+          reps: Number(s.reps) || 0,
           is_completed: true
         });
       });
@@ -230,7 +240,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     setSaving(false);
     alert('🎉 ワークアウトを記録しました！');
     setActiveExercises([]);
-    // 日付を今日にリセットしておく
     setWorkoutDate(new Date().toISOString().split('T')[0]);
     if (onWorkoutSaved) onWorkoutSaved();
   };
@@ -270,7 +279,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         </div>
       </div>
 
-      {/* ★ 日付選択エリア */}
       <div className="flex justify-end -mt-3 pr-1">
         <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
           <Calendar className="w-4 h-4 text-slate-400" />
@@ -283,7 +291,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         </div>
       </div>
 
-      {/* 実施中のメニュー */}
       {activeExercises.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-slate-400 tracking-wider">実施メニュー</h2>
@@ -363,7 +370,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                           type="number"
                           step="0.5"
                           value={set.weight_kg}
-                          onChange={(e) => handleUpdateSet(exIdx, setIdx, 'weight_kg', Number(e.target.value))}
+                          placeholder="-"
+                          onChange={(e) => handleUpdateSet(exIdx, setIdx, 'weight_kg', e.target.value)}
                           className="w-16 bg-slate-900 border border-slate-700 text-center rounded-lg py-1 text-sm font-bold text-slate-100 focus:outline-none focus:border-cyan-400"
                         />
                       </div>
@@ -371,7 +379,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                         <input
                           type="number"
                           value={set.reps}
-                          onChange={(e) => handleUpdateSet(exIdx, setIdx, 'reps', Number(e.target.value))}
+                          placeholder="-"
+                          onChange={(e) => handleUpdateSet(exIdx, setIdx, 'reps', e.target.value)}
                           className="w-16 bg-slate-900 border border-slate-700 text-center rounded-lg py-1 text-sm font-bold text-slate-100 focus:outline-none focus:border-cyan-400"
                         />
                       </div>
