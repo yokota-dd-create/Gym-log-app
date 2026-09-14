@@ -12,8 +12,20 @@ import {
   X,
   Trash2,
   Pencil,
-  Save
+  Save,
+  Plus
 } from 'lucide-react';
+
+// ★ 編集用の新しい型定義
+interface EditSet {
+  id: string;
+  exercise_id: string;
+  set_number: number;
+  weight: string;
+  reps: string;
+  is_deleted: boolean;
+  is_new: boolean;
+}
 
 export const CalendarView = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -21,8 +33,9 @@ export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDateWorkouts, setSelectedDateWorkouts] = useState<any[]>([]);
 
+  // ★ 編集用のステートを配列管理に変更
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
-  const [editState, setEditState] = useState<Record<string, {weight: string, reps: string}>>({});
+  const [editingSets, setEditingSets] = useState<EditSet[]>([]);
 
   const [cycle, setCycle] = useState<'3' | '5'>('5');
   const todayDayOfWeek = new Date().getDay();
@@ -83,39 +96,89 @@ export const CalendarView = () => {
     }
   };
 
+  // ★ 編集モード開始
   const handleStartEdit = (workout: any) => {
-    const initialState: Record<string, {weight: string, reps: string}> = {};
-    workout.sets.forEach((s: any) => {
-      initialState[s.id] = { 
-        weight: s.weight_kg.toString(), 
-        reps: s.reps.toString() 
-      };
-    });
-    setEditState(initialState);
+    const initialSets = workout.sets.map((s: any) => ({
+      id: s.id,
+      exercise_id: s.exercise_id,
+      set_number: s.set_number,
+      weight: s.weight_kg.toString(),
+      reps: s.reps.toString(),
+      is_deleted: false,
+      is_new: false,
+    }));
+    setEditingSets(initialSets);
     setEditingWorkoutId(workout.id);
   };
 
   const handleCancelEdit = () => {
     setEditingWorkoutId(null);
-    setEditState({});
+    setEditingSets([]);
   };
 
+  // ★ セットの追加
+  const handleAddEditSet = (exerciseId: string) => {
+    setEditingSets(prev => {
+      const exSets = prev.filter(s => s.exercise_id === exerciseId && !s.is_deleted);
+      const lastSet = exSets.length > 0 ? exSets[exSets.length - 1] : null;
+
+      return [...prev, {
+        id: `temp_${Date.now()}`,
+        exercise_id: exerciseId,
+        set_number: 999, // 保存時に振り直すので仮の数字
+        weight: lastSet ? lastSet.weight : '',
+        reps: lastSet ? lastSet.reps : '',
+        is_deleted: false,
+        is_new: true,
+      }];
+    });
+  };
+
+  // ★ セットの削除（画面上から消す）
+  const handleRemoveEditSet = (setId: string) => {
+    setEditingSets(prev => prev.map(s => s.id === setId ? { ...s, is_deleted: true } : s));
+  };
+
+  // ★ 数値の変更
   const handleSetChange = (setId: string, field: 'weight' | 'reps', value: string) => {
-    setEditState(prev => ({
-      ...prev,
-      [setId]: { ...prev[setId], [field]: value }
-    }));
+    setEditingSets(prev => prev.map(s => s.id === setId ? { ...s, [field]: value } : s));
   };
 
+  // ★ 保存処理（追加・更新・削除をまとめて実行）
   const handleSaveEdit = async () => {
-    const promises = Object.entries(editState).map(([setId, vals]) => {
-      return supabase
-        .from('workout_sets')
-        .update({
-          weight_kg: Number(vals.weight) || 0,
-          reps: Number(vals.reps) || 0
-        })
-        .eq('id', setId);
+    // 1. 生き残っているセットの番号（#1, #2...）を連番に振り直す
+    const exGroups: Record<string, EditSet[]> = {};
+    editingSets.filter(s => !s.is_deleted).forEach(s => {
+      if (!exGroups[s.exercise_id]) exGroups[s.exercise_id] = [];
+      exGroups[s.exercise_id].push(s);
+    });
+    
+    Object.values(exGroups).forEach(sets => {
+      sets.forEach((s, i) => {
+        s.set_number = i + 1;
+      });
+    });
+
+    // 2. データベースへ反映
+    const promises = editingSets.map(async (s) => {
+      if (s.is_deleted && !s.is_new) {
+        return supabase.from('workout_sets').delete().eq('id', s.id);
+      } else if (s.is_new && !s.is_deleted) {
+        return supabase.from('workout_sets').insert({
+          workout_id: editingWorkoutId,
+          exercise_id: s.exercise_id,
+          set_number: s.set_number,
+          weight_kg: Number(s.weight) || 0,
+          reps: Number(s.reps) || 0,
+          is_completed: true
+        });
+      } else if (!s.is_deleted && !s.is_new) {
+        return supabase.from('workout_sets').update({
+          weight_kg: Number(s.weight) || 0,
+          reps: Number(s.reps) || 0,
+          set_number: s.set_number
+        }).eq('id', s.id);
+      }
     });
 
     await Promise.all(promises);
@@ -293,127 +356,154 @@ export const CalendarView = () => {
                         const exName = s.exercises.name;
                         const exCat = s.exercises.category;
                         if (!exerciseGroups.has(exName)) {
-                          exerciseGroups.set(exName, { category: exCat, sets: [] });
+                          // ★ exercise_id も保存しておく（セット追加時に必要）
+                          exerciseGroups.set(exName, { category: exCat, exercise_id: s.exercise_id, sets: [] });
                         }
                         exerciseGroups.get(exName).sets.push(s);
                       });
 
-                      return Array.from(exerciseGroups.entries()).map(([exName, group], exIdx) => (
-                        <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-slate-700/50 pt-3 mt-3' : ''}`}>
-                          
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center space-x-2 flex-1">
-                              <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold shrink-0 ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
-                                {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
-                              </span>
-                              <span className="text-xs font-bold text-slate-200 leading-tight">{exName}</span>
+                      return Array.from(exerciseGroups.entries()).map(([exName, group], exIdx) => {
+                        // ★ 表示するセットをモードによって切り替える
+                        const setsToRender = isEditing 
+                          ? editingSets.filter(s => s.exercise_id === group.exercise_id && !s.is_deleted)
+                          : group.sets;
+
+                        return (
+                          <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-slate-700/50 pt-3 mt-3' : ''}`}>
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center space-x-2 flex-1">
+                                <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold shrink-0 ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
+                                  {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
+                                </span>
+                                <span className="text-xs font-bold text-slate-200 leading-tight">{exName}</span>
+                              </div>
+
+                              {exIdx === 0 && (
+                                <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
+                                  {!isEditing && (
+                                    <>
+                                      <div className="flex items-center space-x-1 text-orange-400">
+                                        <Flame className="w-3.5 h-3.5" />
+                                        <span>約 {workout.estimated_calories} kcal</span>
+                                      </div>
+                                      <div className="flex items-center space-x-1 text-slate-400">
+                                        <Clock className="w-3.5 h-3.5" />
+                                        <span>{workout.duration_minutes} 分</span>
+                                      </div>
+                                    </>
+                                  )}
+                                  
+                                  {isEditing ? (
+                                    <>
+                                      <button 
+                                        onClick={handleSaveEdit}
+                                        className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
+                                        title="保存"
+                                      >
+                                        <Save className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button 
+                                        onClick={handleCancelEdit}
+                                        className="p-1.5 ml-1 text-slate-400 hover:text-slate-300 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                        title="キャンセル"
+                                      >
+                                        <X className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <button 
+                                        onClick={() => handleStartEdit(workout)}
+                                        className="p-1.5 ml-1 text-cyan-400 hover:text-cyan-300 transition bg-cyan-900/30 rounded-md border border-cyan-700/50"
+                                        title="編集"
+                                      >
+                                        <Pencil className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button 
+                                        onClick={() => handleDeleteWorkout(workout.id)}
+                                        className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                        title="削除"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              )}
                             </div>
 
-                            {exIdx === 0 && (
-                              <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
-                                {!isEditing && (
-                                  <>
-                                    <div className="flex items-center space-x-1 text-orange-400">
-                                      <Flame className="w-3.5 h-3.5" />
-                                      <span>約 {workout.estimated_calories} kcal</span>
-                                    </div>
-                                    <div className="flex items-center space-x-1 text-slate-400">
-                                      <Clock className="w-3.5 h-3.5" />
-                                      <span>{workout.duration_minutes} 分</span>
-                                    </div>
-                                  </>
-                                )}
-                                
-                                {isEditing ? (
-                                  <>
-                                    <button 
-                                      onClick={handleSaveEdit}
-                                      className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
-                                      title="保存"
-                                    >
-                                      <Save className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button 
-                                      onClick={handleCancelEdit}
-                                      className="p-1.5 ml-1 text-slate-400 hover:text-slate-300 transition bg-slate-900/50 rounded-md border border-slate-700/50"
-                                      title="キャンセル"
-                                    >
-                                      <X className="w-3.5 h-3.5" />
-                                    </button>
-                                  </>
-                                ) : (
-                                  <>
-                                    <button 
-                                      onClick={() => handleStartEdit(workout)}
-                                      className="p-1.5 ml-1 text-cyan-400 hover:text-cyan-300 transition bg-cyan-900/30 rounded-md border border-cyan-700/50"
-                                      title="編集"
-                                    >
-                                      <Pencil className="w-3.5 h-3.5" />
-                                    </button>
-                                    <button 
-                                      onClick={() => handleDeleteWorkout(workout.id)}
-                                      className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
-                                      title="削除"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                            <div className="space-y-1.5 mt-2">
+                              {setsToRender.map((s: any, sIdx: number) => {
+                                if (isEditing) {
+                                  // ★ 編集モード時のレイアウト（左寄せ、右端にゴミ箱）
+                                  return (
+                                    <div key={s.id} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 border border-cyan-700/50 shadow-inner">
+                                      <span className="text-xs font-mono font-bold text-cyan-600 w-6">#{sIdx + 1}</span>
+                                      
+                                      <div className="flex flex-1 items-center space-x-3 ml-2">
+                                        <div className="flex items-center space-x-1">
+                                          <input 
+                                            type="number" 
+                                            step="0.5"
+                                            value={s.weight}
+                                            onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
+                                            className="w-14 bg-slate-900 border border-slate-700 text-center rounded-md py-1 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
+                                            placeholder="0"
+                                          />
+                                          <span className="text-[10px] text-slate-500">kg</span>
+                                        </div>
+                                        <div className="flex items-center space-x-1">
+                                          <input 
+                                            type="number" 
+                                            value={s.reps}
+                                            onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
+                                            className="w-12 bg-slate-900 border border-slate-700 text-center rounded-md py-1 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
+                                            placeholder="0"
+                                          />
+                                          <span className="text-[10px] text-slate-500">回</span>
+                                        </div>
+                                      </div>
 
-                          {/* ★ 横並びから、1行ずつの縦並びリストに変更 */}
-                          <div className="space-y-1.5 mt-2">
-                            {group.sets.map((s: any, sIdx: number) => {
-                              if (isEditing) {
-                                const eState = editState[s.id] || { weight: '', reps: '' };
-                                return (
-                                  <div key={sIdx} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 border border-cyan-700/50 shadow-inner">
-                                    <span className="text-xs font-mono font-bold text-cyan-600 w-8">#{sIdx + 1}</span>
-                                    <div className="flex items-center space-x-1">
-                                      <input 
-                                        type="number" 
-                                        step="0.5"
-                                        value={eState.weight}
-                                        onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
-                                        className="w-16 bg-slate-900 border border-slate-700 text-center rounded-md py-1 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
-                                        placeholder="0"
-                                      />
-                                      <span className="text-[10px] text-slate-500 w-4">kg</span>
+                                      <button 
+                                        onClick={() => handleRemoveEditSet(s.id)}
+                                        className="p-1.5 bg-red-950/30 border border-red-900/50 text-red-400 hover:text-red-300 hover:bg-red-900/50 rounded-md transition"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
                                     </div>
-                                    <div className="flex items-center space-x-1">
-                                      <input 
-                                        type="number" 
-                                        value={eState.reps}
-                                        onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
-                                        className="w-16 bg-slate-900 border border-slate-700 text-center rounded-md py-1 text-sm font-bold text-slate-200 focus:outline-none focus:border-cyan-500 placeholder-slate-600"
-                                        placeholder="0"
-                                      />
-                                      <span className="text-[10px] text-slate-500 w-4">回</span>
+                                  );
+                                }
+                                
+                                // ★ 通常時の表示
+                                return (
+                                  <div key={sIdx} className="flex items-center justify-between bg-slate-900/60 rounded-lg px-4 py-2 border border-slate-800/80">
+                                    <span className="text-xs font-mono font-bold text-slate-500 w-8">#{sIdx + 1}</span>
+                                    <div className="flex items-baseline space-x-1 w-20 justify-end">
+                                      <span className="text-sm font-bold text-slate-200">{s.weight_kg}</span>
+                                      <span className="text-[10px] text-slate-500">kg</span>
+                                    </div>
+                                    <div className="flex items-baseline space-x-1 w-20 justify-end">
+                                      <span className="text-sm font-bold text-slate-200">{s.reps}</span>
+                                      <span className="text-[10px] text-slate-500">回</span>
                                     </div>
                                   </div>
                                 );
-                              }
-                              
-                              return (
-                                <div key={sIdx} className="flex items-center justify-between bg-slate-900/60 rounded-lg px-4 py-2 border border-slate-800/80">
-                                  <span className="text-xs font-mono font-bold text-slate-500 w-8">#{sIdx + 1}</span>
-                                  <div className="flex items-baseline space-x-1 w-20 justify-end">
-                                    <span className="text-sm font-bold text-slate-200">{s.weight_kg}</span>
-                                    <span className="text-[10px] text-slate-500">kg</span>
-                                  </div>
-                                  <div className="flex items-baseline space-x-1 w-20 justify-end">
-                                    <span className="text-sm font-bold text-slate-200">{s.reps}</span>
-                                    <span className="text-[10px] text-slate-500">回</span>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
+                              })}
+                            </div>
+                            
+                            {/* ★ セット追加（＋）ボタン */}
+                            {isEditing && (
+                              <button
+                                onClick={() => handleAddEditSet(group.exercise_id)}
+                                className="w-full mt-2 py-1.5 border border-dashed border-cyan-700/50 rounded-lg text-cyan-500 flex items-center justify-center hover:bg-cyan-900/30 transition"
+                              >
+                                <Plus className="w-4 h-4" />
+                              </button>
+                            )}
 
-                        </div>
-                      ));
+                          </div>
+                        );
+                      });
                     })()}
                   </div>
                 </div>
