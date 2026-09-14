@@ -10,7 +10,9 @@ import {
   Sparkles,
   Clock,
   X,
-  Trash2
+  Trash2,
+  Pencil,
+  Save
 } from 'lucide-react';
 
 export const CalendarView = () => {
@@ -18,6 +20,10 @@ export const CalendarView = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDateWorkouts, setSelectedDateWorkouts] = useState<any[]>([]);
+
+  // ★ 編集用のステート
+  const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
+  const [editState, setEditState] = useState<Record<string, {weight: string, reps: string}>>({});
 
   const [cycle, setCycle] = useState<'3' | '5'>('5');
   const todayDayOfWeek = new Date().getDay();
@@ -62,7 +68,6 @@ export const CalendarView = () => {
     setWorkouts(data || []);
   };
 
-  // ★ 追加：ワークアウトを削除する機能
   const handleDeleteWorkout = async (workoutId: string) => {
     if (!window.confirm('この記録を完全に削除しますか？')) return;
     
@@ -72,12 +77,59 @@ export const CalendarView = () => {
       .eq('id', workoutId);
       
     if (!error) {
-      // 画面上のデータからも即座に消す
       setWorkouts(prev => prev.filter(w => w.id !== workoutId));
       setSelectedDateWorkouts(prev => prev.filter(w => w.id !== workoutId));
     } else {
       alert('削除に失敗しました: ' + error.message);
     }
+  };
+
+  // ★ 編集開始処理
+  const handleStartEdit = (workout: any) => {
+    const initialState: Record<string, {weight: string, reps: string}> = {};
+    workout.sets.forEach((s: any) => {
+      initialState[s.id] = { 
+        weight: s.weight_kg.toString(), 
+        reps: s.reps.toString() 
+      };
+    });
+    setEditState(initialState);
+    setEditingWorkoutId(workout.id);
+  };
+
+  // ★ 編集キャンセル処理
+  const handleCancelEdit = () => {
+    setEditingWorkoutId(null);
+    setEditState({});
+  };
+
+  // ★ 編集中の入力検知
+  const handleSetChange = (setId: string, field: 'weight' | 'reps', value: string) => {
+    setEditState(prev => ({
+      ...prev,
+      [setId]: { ...prev[setId], [field]: value }
+    }));
+  };
+
+  // ★ 編集の保存処理
+  const handleSaveEdit = async (workoutId: string) => {
+    const promises = Object.entries(editState).map(([setId, vals]) => {
+      return supabase
+        .from('workout_sets')
+        .update({
+          weight_kg: Number(vals.weight) || 0,
+          reps: Number(vals.reps) || 0
+        })
+        .eq('id', setId);
+    });
+
+    await Promise.all(promises);
+
+    // 保存後、再読み込みして最新状態を反映
+    if (selectedDate) {
+      handleDateClick(selectedDate.getDate());
+    }
+    setEditingWorkoutId(null);
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -112,6 +164,9 @@ export const CalendarView = () => {
     });
 
     setSelectedDate(clickedDate);
+    
+    // 他の日付を開いたら編集モードを解除
+    setEditingWorkoutId(null);
     
     if (dateWorkouts.length > 0) {
       const workoutIds = dateWorkouts.map(w => w.id);
@@ -219,7 +274,10 @@ export const CalendarView = () => {
             {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日の記録
           </h3>
           <button 
-            onClick={() => setSelectedDate(null)}
+            onClick={() => {
+              setSelectedDate(null);
+              setEditingWorkoutId(null);
+            }}
             className="p-1 text-slate-400 hover:text-slate-200"
           >
             <X className="w-4 h-4" />
@@ -230,68 +288,132 @@ export const CalendarView = () => {
           <p className="text-sm text-slate-500 text-center py-4">この日の記録はありません</p>
         ) : (
           <div className="space-y-4">
-            {selectedDateWorkouts.map((workout, wIdx) => (
-              <div key={wIdx} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50">
-                <div className="space-y-3">
-                  {(() => {
-                    const exerciseGroups = new Map();
-                    workout.sets?.forEach((s: any) => {
-                      if (!s.exercises) return;
-                      const exName = s.exercises.name;
-                      const exCat = s.exercises.category;
-                      if (!exerciseGroups.has(exName)) {
-                        exerciseGroups.set(exName, { category: exCat, sets: [] });
-                      }
-                      exerciseGroups.get(exName).sets.push(s);
-                    });
+            {selectedDateWorkouts.map((workout, wIdx) => {
+              const isEditing = editingWorkoutId === workout.id;
+              
+              return (
+                <div key={wIdx} className={`bg-slate-800/50 rounded-xl p-3 border transition ${isEditing ? 'border-cyan-500/50 shadow-lg shadow-cyan-900/20' : 'border-slate-700/50'}`}>
+                  <div className="space-y-3">
+                    {(() => {
+                      const exerciseGroups = new Map();
+                      workout.sets?.forEach((s: any) => {
+                        if (!s.exercises) return;
+                        const exName = s.exercises.name;
+                        const exCat = s.exercises.category;
+                        if (!exerciseGroups.has(exName)) {
+                          exerciseGroups.set(exName, { category: exCat, sets: [] });
+                        }
+                        exerciseGroups.get(exName).sets.push(s);
+                      });
 
-                    return Array.from(exerciseGroups.entries()).map(([exName, group], exIdx) => (
-                      <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-slate-700/50 pt-3 mt-3' : ''}`}>
-                        
-                        {/* ★ ヘッダー部分（バッジ、名前、スタッツ、削除を1行に集約） */}
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center space-x-2 flex-1">
-                            <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold shrink-0 ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
-                              {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
-                            </span>
-                            <span className="text-xs font-bold text-slate-200 leading-tight">{exName}</span>
+                      return Array.from(exerciseGroups.entries()).map(([exName, group], exIdx) => (
+                        <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-slate-700/50 pt-3 mt-3' : ''}`}>
+                          
+                          <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center space-x-2 flex-1">
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold shrink-0 ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
+                                {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
+                              </span>
+                              <span className="text-xs font-bold text-slate-200 leading-tight">{exName}</span>
+                            </div>
+
+                            {exIdx === 0 && (
+                              <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
+                                {!isEditing && (
+                                  <>
+                                    <div className="flex items-center space-x-1 text-orange-400">
+                                      <Flame className="w-3.5 h-3.5" />
+                                      <span>約 {workout.estimated_calories} kcal</span>
+                                    </div>
+                                    <div className="flex items-center space-x-1 text-slate-400">
+                                      <Clock className="w-3.5 h-3.5" />
+                                      <span>{workout.duration_minutes} 分</span>
+                                    </div>
+                                  </>
+                                )}
+                                
+                                {/* ★ 編集・保存・削除ボタンの切り替え */}
+                                {isEditing ? (
+                                  <>
+                                    <button 
+                                      onClick={() => handleSaveEdit(workout.id)}
+                                      className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
+                                      title="保存"
+                                    >
+                                      <Save className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button 
+                                      onClick={handleCancelEdit}
+                                      className="p-1.5 ml-1 text-slate-400 hover:text-slate-300 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                      title="キャンセル"
+                                    >
+                                      <X className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button 
+                                      onClick={() => handleStartEdit(workout)}
+                                      className="p-1.5 ml-1 text-cyan-400 hover:text-cyan-300 transition bg-cyan-900/30 rounded-md border border-cyan-700/50"
+                                      title="編集"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" />
+                                    </button>
+                                    <button 
+                                      onClick={() => handleDeleteWorkout(workout.id)}
+                                      className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                      title="削除"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            )}
                           </div>
 
-                          {/* このブロック（ワークアウト）の最初の種目の横にだけスタッツと削除ボタンを表示 */}
-                          {exIdx === 0 && (
-                            <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
-                              <div className="flex items-center space-x-1 text-orange-400">
-                                <Flame className="w-3.5 h-3.5" />
-                                <span>約 {workout.estimated_calories} kcal</span>
-                              </div>
-                              <div className="flex items-center space-x-1 text-slate-400">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>{workout.duration_minutes} 分</span>
-                              </div>
-                              <button 
-                                onClick={() => handleDeleteWorkout(workout.id)}
-                                className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
-                                title="この記録を削除"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          )}
+                          <div className="flex flex-wrap gap-1">
+                            {group.sets.map((s: any, sIdx: number) => {
+                              // ★ 編集モード時の入力ボックス表示
+                              if (isEditing) {
+                                const eState = editState[s.id] || { weight: '', reps: '' };
+                                return (
+                                  <div key={sIdx} className="bg-slate-950 rounded px-1.5 py-0.5 flex items-center border border-cyan-700/50">
+                                    <input 
+                                      type="number" 
+                                      step="0.5"
+                                      value={eState.weight}
+                                      onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
+                                      className="w-8 bg-transparent text-slate-200 text-[10px] font-bold text-right focus:outline-none placeholder-slate-600"
+                                      placeholder="0"
+                                    />
+                                    <span className="text-[10px] text-slate-500 mx-0.5">kg ×</span>
+                                    <input 
+                                      type="number" 
+                                      value={eState.reps}
+                                      onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
+                                      className="w-6 bg-transparent text-slate-200 text-[10px] font-bold text-center focus:outline-none placeholder-slate-600"
+                                      placeholder="0"
+                                    />
+                                  </div>
+                                );
+                              }
+                              
+                              // 通常時の表示
+                              return (
+                                <div key={sIdx} className="bg-slate-900 rounded px-1.5 py-0.5 text-[10px] text-slate-400 border border-slate-800">
+                                  <span className="text-slate-300 font-bold">{s.weight_kg}</span>kg × <span className="text-slate-300 font-bold">{s.reps}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-
-                        <div className="flex flex-wrap gap-1">
-                          {group.sets.map((s: any, sIdx: number) => (
-                            <div key={sIdx} className="bg-slate-900 rounded px-1.5 py-0.5 text-[10px] text-slate-400 border border-slate-800">
-                              <span className="text-slate-300 font-bold">{s.weight_kg}</span>kg × <span className="text-slate-300 font-bold">{s.reps}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    ));
-                  })()}
+                      ));
+                    })()}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
