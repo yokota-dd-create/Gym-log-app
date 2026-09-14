@@ -112,7 +112,7 @@ export const CalendarView = () => {
   };
 
   // ★ 編集の保存処理
-  const handleSaveEdit = async (workoutId: string) => {
+  const handleSaveEdit = async () => {
     const promises = Object.entries(editState).map(([setId, vals]) => {
       return supabase
         .from('workout_sets')
@@ -336,7 +336,7 @@ export const CalendarView = () => {
                                 {isEditing ? (
                                   <>
                                     <button 
-                                      onClick={() => handleSaveEdit(workout.id)}
+                                      onClick={() => handleSaveEdit()}
                                       className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
                                       title="保存"
                                     >
