@@ -176,11 +176,12 @@ export const CalendarView = () => {
                 <div 
                   key={i} 
                   className={`w-1.5 h-1.5 rounded-full ${
-                    cat === 'chest' ? 'bg-blue-400' :
-                    cat === 'back' ? 'bg-emerald-400' :
-                    cat === 'legs' ? 'bg-purple-400' :
+                    cat === 'chest' ? 'bg-rose-400' :
+                    cat === 'back' ? 'bg-blue-400' :
+                    cat === 'legs' ? 'bg-emerald-400' :
                     cat === 'shoulders' ? 'bg-amber-400' :
-                    cat === 'arms' ? 'bg-rose-400' : 'bg-slate-400'
+                    cat === 'arms' ? 'bg-purple-400' : 
+                    cat === 'core' ? 'bg-cyan-400' : 'bg-slate-400'
                   }`}
                 />
               ))}
