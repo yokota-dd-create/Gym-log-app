@@ -9,7 +9,8 @@ import {
   Calendar as CalendarIcon, 
   Sparkles,
   Clock,
-  X
+  X,
+  Trash2
 } from 'lucide-react';
 
 export const CalendarView = () => {
@@ -18,22 +19,21 @@ export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDateWorkouts, setSelectedDateWorkouts] = useState<any[]>([]);
 
-  // ★ おすすめメニュー用のステートと設定
   const [cycle, setCycle] = useState<'3' | '5'>('5');
-  const todayDayOfWeek = new Date().getDay(); // 0:日, 1:月, 2:火, 3:水, 4:木, 5:金, 6:土
+  const todayDayOfWeek = new Date().getDay();
 
   const RECOMMENDED_ROUTINES: Record<string, Record<number, MuscleCategory[]>> = {
     '3': {
-      1: ['chest', 'shoulders'], // 月
-      3: ['back', 'arms'],       // 水
-      5: ['legs', 'core'],       // 金
+      1: ['chest', 'shoulders'],
+      3: ['back', 'arms'],      
+      5: ['legs', 'core'],      
     },
     '5': {
-      1: ['chest'],              // 月
-      2: ['back', 'core'],       // 火
-      3: ['legs'],               // 水
-      5: ['shoulders', 'core'],  // 金
-      6: ['arms'],               // 土
+      1: ['chest'],             
+      2: ['back', 'core'],      
+      3: ['legs'],              
+      5: ['shoulders', 'core'], 
+      6: ['arms'],              
     }
   };
   const recommendedCategories = RECOMMENDED_ROUTINES[cycle][todayDayOfWeek] || [];
@@ -46,7 +46,6 @@ export const CalendarView = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     
-    // 月の最初と最後の日を計算
     const startDate = new Date(year, month - 1, 1).toISOString();
     const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
 
@@ -61,6 +60,24 @@ export const CalendarView = () => {
       return;
     }
     setWorkouts(data || []);
+  };
+
+  // ★ 追加：ワークアウトを削除する機能
+  const handleDeleteWorkout = async (workoutId: string) => {
+    if (!window.confirm('この記録を完全に削除しますか？')) return;
+    
+    const { error } = await supabase
+      .from('workouts')
+      .delete()
+      .eq('id', workoutId);
+      
+    if (!error) {
+      // 画面上のデータからも即座に消す
+      setWorkouts(prev => prev.filter(w => w.id !== workoutId));
+      setSelectedDateWorkouts(prev => prev.filter(w => w.id !== workoutId));
+    } else {
+      alert('削除に失敗しました: ' + error.message);
+    }
   };
 
   const getDaysInMonth = (year: number, month: number) => {
@@ -127,12 +144,10 @@ export const CalendarView = () => {
     const days = [];
     const today = new Date();
     
-    // 空白セル
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="h-14 bg-slate-900/20 rounded-lg"></div>);
     }
 
-    // 日付セル
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
       const year = date.getFullYear();
@@ -217,17 +232,6 @@ export const CalendarView = () => {
           <div className="space-y-4">
             {selectedDateWorkouts.map((workout, wIdx) => (
               <div key={wIdx} className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/50">
-                <div className="flex items-center space-x-4 text-xs font-medium mb-3">
-                  <div className="flex items-center space-x-1 text-orange-400">
-                    <Flame className="w-3.5 h-3.5" />
-                    <span>約 {workout.estimated_calories} kcal</span>
-                  </div>
-                  <div className="flex items-center space-x-1 text-slate-400">
-                    <Clock className="w-3.5 h-3.5" />
-                    <span>{workout.duration_minutes} 分</span>
-                  </div>
-                </div>
-
                 <div className="space-y-3">
                   {(() => {
                     const exerciseGroups = new Map();
@@ -242,13 +246,39 @@ export const CalendarView = () => {
                     });
 
                     return Array.from(exerciseGroups.entries()).map(([exName, group], exIdx) => (
-                      <div key={exIdx} className="border-t border-slate-700/50 pt-2">
-                        <div className="flex items-center space-x-2 mb-1.5">
-                          <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
-                            {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
-                          </span>
-                          <span className="text-xs font-bold text-slate-200">{exName}</span>
+                      <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-slate-700/50 pt-3 mt-3' : ''}`}>
+                        
+                        {/* ★ ヘッダー部分（バッジ、名前、スタッツ、削除を1行に集約） */}
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex items-center space-x-2 flex-1">
+                            <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold shrink-0 ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
+                              {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
+                            </span>
+                            <span className="text-xs font-bold text-slate-200 leading-tight">{exName}</span>
+                          </div>
+
+                          {/* このブロック（ワークアウト）の最初の種目の横にだけスタッツと削除ボタンを表示 */}
+                          {exIdx === 0 && (
+                            <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
+                              <div className="flex items-center space-x-1 text-orange-400">
+                                <Flame className="w-3.5 h-3.5" />
+                                <span>約 {workout.estimated_calories} kcal</span>
+                              </div>
+                              <div className="flex items-center space-x-1 text-slate-400">
+                                <Clock className="w-3.5 h-3.5" />
+                                <span>{workout.duration_minutes} 分</span>
+                              </div>
+                              <button 
+                                onClick={() => handleDeleteWorkout(workout.id)}
+                                className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                title="この記録を削除"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
                         </div>
+
                         <div className="flex flex-wrap gap-1">
                           {group.sets.map((s: any, sIdx: number) => (
                             <div key={sIdx} className="bg-slate-900 rounded px-1.5 py-0.5 text-[10px] text-slate-400 border border-slate-800">
@@ -270,7 +300,6 @@ export const CalendarView = () => {
 
   return (
     <div className="space-y-4 pb-24">
-      {/* ★ おすすめメニュー表示エリア */}
       <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-bold text-slate-200 flex items-center">
