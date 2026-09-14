@@ -5,7 +5,6 @@ import { CATEGORY_MAP } from '../types/database';
 import { 
   ChevronLeft, 
   ChevronRight, 
-  Flame, 
   Calendar as CalendarIcon, 
   Sparkles,
   X,
@@ -138,7 +137,6 @@ export const CalendarView = () => {
   };
 
   const handleSaveEdit = async () => {
-    // 1. 番号の振り直し
     const exGroups: Record<string, EditSet[]> = {};
     editingSets.filter(s => !s.is_deleted).forEach(s => {
       if (!exGroups[s.exercise_id]) exGroups[s.exercise_id] = [];
@@ -151,7 +149,6 @@ export const CalendarView = () => {
       });
     });
 
-    // 2. データベースへの反映（セットの追加・更新・削除）
     const promises = editingSets.map(async (s) => {
       if (s.is_deleted && !s.is_new) {
         return supabase.from('workout_sets').delete().eq('id', s.id);
@@ -175,18 +172,6 @@ export const CalendarView = () => {
 
     await Promise.all(promises);
 
-    // ★ 追加：カロリーの再計算と更新
-    const activeSets = editingSets.filter(s => !s.is_deleted);
-    const totalWeightVolume = activeSets.reduce((sum, s) => sum + (Number(s.weight) * Number(s.reps)), 0);
-    const completedSetsCount = activeSets.length;
-    const newCalories = Math.round((completedSetsCount * 12) + (totalWeightVolume * 0.015));
-
-    await supabase
-      .from('workouts')
-      .update({ estimated_calories: newCalories })
-      .eq('id', editingWorkoutId);
-
-    // 再描画
     if (selectedDate) {
       handleDateClick(selectedDate.getDate());
     }
@@ -382,14 +367,6 @@ export const CalendarView = () => {
 
                               {exIdx === 0 && (
                                 <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
-                                  {/* ★ 時間の表示を完全に削除 */}
-                                  {!isEditing && (
-                                    <div className="flex items-center space-x-1 text-orange-400">
-                                      <Flame className="w-3.5 h-3.5" />
-                                      <span>約 {workout.estimated_calories} kcal</span>
-                                    </div>
-                                  )}
-                                  
                                   {isEditing ? (
                                     <>
                                       <button 
