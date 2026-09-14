@@ -218,7 +218,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       return;
     }
 
-    const allSets = [];
+    const allSets: any[] = [];
     activeExercises.forEach((item) => {
       item.sets.filter((s) => s.is_completed).forEach((s) => {
         allSets.push({
