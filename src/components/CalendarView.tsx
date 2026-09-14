@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Workout, MuscleCategory } from '../types/database';
 import { CATEGORY_MAP } from '../types/database';
@@ -33,24 +33,8 @@ export const CalendarView = () => {
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
   const [editingSets, setEditingSets] = useState<EditSet[]>([]);
 
-  const [cycle, setCycle] = useState<'3' | '5'>('5');
-  const todayDayOfWeek = new Date().getDay();
-
-  const RECOMMENDED_ROUTINES: Record<string, Record<number, MuscleCategory[]>> = {
-    '3': {
-      1: ['chest', 'shoulders'],
-      3: ['back', 'arms'],      
-      5: ['legs', 'core'],      
-    },
-    '5': {
-      1: ['chest'],             
-      2: ['back', 'core'],      
-      3: ['legs'],              
-      5: ['shoulders', 'core'], 
-      6: ['arms'],              
-    }
-  };
-  const recommendedCategories = RECOMMENDED_ROUTINES[cycle][todayDayOfWeek] || [];
+  // ★ 頻度のバリエーションを週2〜週6に拡張
+  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '6'>('5');
 
   useEffect(() => {
     fetchWorkouts();
@@ -60,14 +44,17 @@ export const CalendarView = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     
-    const startDate = new Date(year, month - 1, 1).toISOString();
-    const endDate = new Date(year, month, 0, 23, 59, 59).toISOString();
+    // ★ カレンダーの表示月よりさらに14日前から取得し、サジェストの精度を担保する
+    const startDate = new Date(year, month - 1, 1);
+    startDate.setDate(startDate.getDate() - 14);
+    
+    const endDate = new Date(year, month, 0, 23, 59, 59);
 
     const { data, error } = await supabase
       .from('workouts')
       .select('*')
-      .gte('workout_date', startDate)
-      .lte('workout_date', endDate);
+      .gte('workout_date', startDate.toISOString())
+      .lte('workout_date', endDate.toISOString());
 
     if (error) {
       console.error('Failed to load workouts:', error);
@@ -75,6 +62,54 @@ export const CalendarView = () => {
     }
     setWorkouts(data || []);
   };
+
+  // ★ 過去の記録から最適な部位を割り出すスマートサジェスト機能
+  const recommendedCategories = useMemo(() => {
+    const lastTrained: Record<string, number> = {
+      chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0, core: 0
+    };
+
+    // 1. 各部位の「最後にトレーニングした日時」を記録
+    workouts.forEach(w => {
+      if (!w.workout_date) return;
+      const wDate = new Date(w.workout_date).setHours(0,0,0,0);
+      w.target_categories?.forEach(cat => {
+        if (wDate > lastTrained[cat]) {
+          lastTrained[cat] = wDate;
+        }
+      });
+    });
+
+    // 2. 頻度ごとの王道の分割法（スプリット）定義
+    const SPLITS: Record<string, MuscleCategory[][]> = {
+      '2': [['chest', 'shoulders', 'arms'], ['back', 'legs', 'core']], // 上半身メイン / 背中・下半身
+      '3': [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']], // PPL（プッシュ/プル/レッグ）
+      '4': [['chest', 'arms'], ['back', 'core'], ['legs'], ['shoulders']], // 四分割
+      '5': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms']], // 五分割（ブロスプリット）
+      '6': [['chest', 'shoulders'], ['back', 'arms'], ['legs']] // 高頻度PPL
+    };
+
+    const groups = SPLITS[frequency] || SPLITS['5'];
+    let bestGroup: MuscleCategory[] = [];
+    let maxDaysSince = -1;
+    const today = new Date().setHours(0,0,0,0);
+
+    // 3. 一番「休ませている期間が長い」グループを割り出す
+    groups.forEach(group => {
+      // そのグループ内で一番「最近」やった部位の日付を取得
+      const groupLastTrained = Math.max(...group.map(m => lastTrained[m] || 0));
+      // 何日休んでいるか計算（一度もやっていない場合は999日扱い）
+      const daysSince = groupLastTrained === 0 ? 999 : (today - groupLastTrained) / (1000 * 60 * 60 * 24);
+      
+      if (daysSince > maxDaysSince) {
+        maxDaysSince = daysSince;
+        bestGroup = group;
+      }
+    });
+
+    // もし一番休んでいる部位でも、今日すでにトレーニング済みならお休みを推奨
+    return maxDaysSince <= 0 ? [] : bestGroup;
+  }, [workouts, frequency]);
 
   const handleDeleteWorkout = async (workoutId: string) => {
     if (!window.confirm('この記録を完全に削除しますか？')) return;
@@ -181,6 +216,9 @@ export const CalendarView = () => {
       .from('workouts')
       .update({ estimated_calories: newCalories })
       .eq('id', editingWorkoutId);
+
+    // ★ 最新のデータで全体を再読み込みして、サジェストを更新する
+    await fetchWorkouts();
 
     if (selectedDate) {
       handleDateClick(selectedDate.getDate());
@@ -412,7 +450,6 @@ export const CalendarView = () => {
                               )}
                             </div>
 
-                            {/* ★ スケルトン（骨組み）を完全に一致させた行レイアウト */}
                             <div className="space-y-1.5 mt-2">
                               {setsToRender.map((s: any, sIdx: number) => {
                                 const rowKey = isEditing ? s.id : sIdx;
@@ -423,14 +460,12 @@ export const CalendarView = () => {
 
                                 return (
                                   <div key={rowKey} className={`${baseRowClasses} ${modeClasses}`}>
-                                    {/* 1. セット番号 */}
                                     <div className="w-8 flex-shrink-0">
                                       <span className={`text-xs font-mono font-bold ${isEditing ? 'text-cyan-600' : 'text-slate-500'}`}>
                                         #{sIdx + 1}
                                       </span>
                                     </div>
                                     
-                                    {/* 2. 重量と回数（中央寄せ） */}
                                     <div className="flex flex-1 items-center justify-center space-x-6">
                                       <div className="flex items-center justify-end w-20">
                                         {isEditing ? (
@@ -465,7 +500,6 @@ export const CalendarView = () => {
                                       </div>
                                     </div>
 
-                                    {/* 3. 右端のゴミ箱 or 空白 */}
                                     <div className="w-8 flex-shrink-0 flex justify-end">
                                       {isEditing && (
                                         <button 
@@ -513,12 +547,15 @@ export const CalendarView = () => {
             今日のおすすめ部位
           </h3>
           <select
-            value={cycle}
-            onChange={(e) => setCycle(e.target.value as '3' | '5')}
+            value={frequency}
+            onChange={(e) => setFrequency(e.target.value as any)}
             className="bg-slate-800 text-xs font-bold text-slate-300 rounded-lg border border-slate-700 px-3 py-1.5 focus:outline-none focus:border-amber-500"
           >
-            <option value="3">週3回コース</option>
-            <option value="5">週5回コース</option>
+            <option value="2">週2回 (二分割)</option>
+            <option value="3">週3回 (PPL)</option>
+            <option value="4">週4回 (四分割)</option>
+            <option value="5">週5回 (ブロスプリット)</option>
+            <option value="6">週6回 (高頻度PPL)</option>
           </select>
         </div>
 
