@@ -8,7 +8,6 @@ import {
   Flame, 
   Calendar as CalendarIcon, 
   Sparkles,
-  Clock,
   X,
   Trash2,
   Pencil,
@@ -16,7 +15,6 @@ import {
   Plus
 } from 'lucide-react';
 
-// ★ 編集用の新しい型定義
 interface EditSet {
   id: string;
   exercise_id: string;
@@ -33,7 +31,6 @@ export const CalendarView = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedDateWorkouts, setSelectedDateWorkouts] = useState<any[]>([]);
 
-  // ★ 編集用のステートを配列管理に変更
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
   const [editingSets, setEditingSets] = useState<EditSet[]>([]);
 
@@ -96,7 +93,6 @@ export const CalendarView = () => {
     }
   };
 
-  // ★ 編集モード開始
   const handleStartEdit = (workout: any) => {
     const initialSets = workout.sets.map((s: any) => ({
       id: s.id,
@@ -116,7 +112,6 @@ export const CalendarView = () => {
     setEditingSets([]);
   };
 
-  // ★ セットの追加
   const handleAddEditSet = (exerciseId: string) => {
     setEditingSets(prev => {
       const exSets = prev.filter(s => s.exercise_id === exerciseId && !s.is_deleted);
@@ -125,7 +120,7 @@ export const CalendarView = () => {
       return [...prev, {
         id: `temp_${Date.now()}`,
         exercise_id: exerciseId,
-        set_number: 999, // 保存時に振り直すので仮の数字
+        set_number: 999,
         weight: lastSet ? lastSet.weight : '',
         reps: lastSet ? lastSet.reps : '',
         is_deleted: false,
@@ -134,19 +129,16 @@ export const CalendarView = () => {
     });
   };
 
-  // ★ セットの削除（画面上から消す）
   const handleRemoveEditSet = (setId: string) => {
     setEditingSets(prev => prev.map(s => s.id === setId ? { ...s, is_deleted: true } : s));
   };
 
-  // ★ 数値の変更
   const handleSetChange = (setId: string, field: 'weight' | 'reps', value: string) => {
     setEditingSets(prev => prev.map(s => s.id === setId ? { ...s, [field]: value } : s));
   };
 
-  // ★ 保存処理（追加・更新・削除をまとめて実行）
   const handleSaveEdit = async () => {
-    // 1. 生き残っているセットの番号（#1, #2...）を連番に振り直す
+    // 1. 番号の振り直し
     const exGroups: Record<string, EditSet[]> = {};
     editingSets.filter(s => !s.is_deleted).forEach(s => {
       if (!exGroups[s.exercise_id]) exGroups[s.exercise_id] = [];
@@ -159,7 +151,7 @@ export const CalendarView = () => {
       });
     });
 
-    // 2. データベースへ反映
+    // 2. データベースへの反映（セットの追加・更新・削除）
     const promises = editingSets.map(async (s) => {
       if (s.is_deleted && !s.is_new) {
         return supabase.from('workout_sets').delete().eq('id', s.id);
@@ -183,6 +175,18 @@ export const CalendarView = () => {
 
     await Promise.all(promises);
 
+    // ★ 追加：カロリーの再計算と更新
+    const activeSets = editingSets.filter(s => !s.is_deleted);
+    const totalWeightVolume = activeSets.reduce((sum, s) => sum + (Number(s.weight) * Number(s.reps)), 0);
+    const completedSetsCount = activeSets.length;
+    const newCalories = Math.round((completedSetsCount * 12) + (totalWeightVolume * 0.015));
+
+    await supabase
+      .from('workouts')
+      .update({ estimated_calories: newCalories })
+      .eq('id', editingWorkoutId);
+
+    // 再描画
     if (selectedDate) {
       handleDateClick(selectedDate.getDate());
     }
@@ -356,14 +360,12 @@ export const CalendarView = () => {
                         const exName = s.exercises.name;
                         const exCat = s.exercises.category;
                         if (!exerciseGroups.has(exName)) {
-                          // ★ exercise_id も保存しておく（セット追加時に必要）
                           exerciseGroups.set(exName, { category: exCat, exercise_id: s.exercise_id, sets: [] });
                         }
                         exerciseGroups.get(exName).sets.push(s);
                       });
 
                       return Array.from(exerciseGroups.entries()).map(([exName, group], exIdx) => {
-                        // ★ 表示するセットをモードによって切り替える
                         const setsToRender = isEditing 
                           ? editingSets.filter(s => s.exercise_id === group.exercise_id && !s.is_deleted)
                           : group.sets;
@@ -380,17 +382,12 @@ export const CalendarView = () => {
 
                               {exIdx === 0 && (
                                 <div className="flex items-center space-x-2 text-[10px] font-medium ml-2 shrink-0">
+                                  {/* ★ 時間の表示を完全に削除 */}
                                   {!isEditing && (
-                                    <>
-                                      <div className="flex items-center space-x-1 text-orange-400">
-                                        <Flame className="w-3.5 h-3.5" />
-                                        <span>約 {workout.estimated_calories} kcal</span>
-                                      </div>
-                                      <div className="flex items-center space-x-1 text-slate-400">
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>{workout.duration_minutes} 分</span>
-                                      </div>
-                                    </>
+                                    <div className="flex items-center space-x-1 text-orange-400">
+                                      <Flame className="w-3.5 h-3.5" />
+                                      <span>約 {workout.estimated_calories} kcal</span>
+                                    </div>
                                   )}
                                   
                                   {isEditing ? (
@@ -435,7 +432,6 @@ export const CalendarView = () => {
                             <div className="space-y-1.5 mt-2">
                               {setsToRender.map((s: any, sIdx: number) => {
                                 if (isEditing) {
-                                  // ★ 編集モード時のレイアウト（左寄せ、右端にゴミ箱）
                                   return (
                                     <div key={s.id} className="flex items-center justify-between bg-slate-950 rounded-lg px-3 py-2 border border-cyan-700/50 shadow-inner">
                                       <span className="text-xs font-mono font-bold text-cyan-600 w-6">#{sIdx + 1}</span>
@@ -474,7 +470,6 @@ export const CalendarView = () => {
                                   );
                                 }
                                 
-                                // ★ 通常時の表示
                                 return (
                                   <div key={sIdx} className="flex items-center justify-between bg-slate-900/60 rounded-lg px-4 py-2 border border-slate-800/80">
                                     <span className="text-xs font-mono font-bold text-slate-500 w-8">#{sIdx + 1}</span>
@@ -491,7 +486,6 @@ export const CalendarView = () => {
                               })}
                             </div>
                             
-                            {/* ★ セット追加（＋）ボタン */}
                             {isEditing && (
                               <button
                                 onClick={() => handleAddEditSet(group.exercise_id)}
