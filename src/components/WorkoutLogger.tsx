@@ -5,15 +5,13 @@ import { CATEGORY_MAP } from '../types/database';
 import { 
   Dumbbell, 
   Lightbulb, 
-  Timer, 
   Plus, 
   Trash2, 
   CheckCircle2, 
   Circle, 
-  Flame, 
   Save,
   Calendar,
-  X // ★ Xアイコンを追加
+  X
 } from 'lucide-react';
 
 interface LocalWorkoutSet {
@@ -37,32 +35,13 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
   const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>([]);
   const [workoutDate, setWorkoutDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
-  const [restSeconds, setRestSeconds] = useState<number>(0);
-  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
   const [startTime] = useState<Date>(new Date());
   const [saving, setSaving] = useState<boolean>(false);
-
-  // ★ 画像拡大用のステートを追加
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
   useEffect(() => {
     fetchExercises();
   }, []);
-
-  useEffect(() => {
-    let interval: any;
-    if (isTimerRunning && restSeconds > 0) {
-      interval = setInterval(() => {
-        setRestSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (restSeconds === 0 && isTimerRunning) {
-      setIsTimerRunning(false);
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]);
-      }
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, restSeconds]);
 
   const fetchExercises = async () => {
     const { data: exData, error: exErr } = await supabase
@@ -151,12 +130,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         if (idx !== exerciseIndex) return item;
         const updatedSets = item.sets.map((s, sIdx) => {
           if (sIdx !== setIndex) return s;
-          const nextCompleted = !s.is_completed;
-          if (nextCompleted) {
-            setRestSeconds(90);
-            setIsTimerRunning(true);
-          }
-          return { ...s, is_completed: nextCompleted };
+          return { ...s, is_completed: !s.is_completed };
         });
         return { ...item, sets: updatedSets };
       })
@@ -249,7 +223,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
 
   return (
     <>
-      {/* ★ 画像拡大モーダル */}
       {enlargedImage && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 transition-opacity cursor-pointer"
@@ -272,36 +245,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       )}
 
       <div className="space-y-6 pb-24">
-        {/* 上部ステータスバー */}
-        <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 p-3 flex justify-between items-center rounded-xl shadow-lg">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1.5 text-amber-400 font-mono text-lg font-bold">
-              <Timer className={`w-5 h-5 ${isTimerRunning ? 'animate-pulse text-red-400' : ''}`} />
-              <span>{Math.floor(restSeconds / 60)}:{(restSeconds % 60).toString().padStart(2, '0')}</span>
-            </div>
-            {isTimerRunning && (
-              <button
-                type="button"
-                onClick={() => setIsTimerRunning(false)}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded cursor-pointer"
-              >
-                スキップ
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-4 text-xs font-medium">
-            <div className="flex items-center space-x-1 text-orange-400">
-              <Flame className="w-4 h-4" />
-              <span>約 {estimatedCalories} kcal</span>
-            </div>
-            <div className="text-slate-400">
-              総負荷: <span className="font-bold text-slate-200">{totalWeightVolume.toLocaleString()}</span> kg
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end -mt-3 pr-1">
+        
+        <div className="flex justify-end pt-2 pr-1">
           <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
             <Calendar className="w-4 h-4 text-slate-400" />
             <input
@@ -322,7 +267,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                 <div key={item.exercise.id} className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center space-x-3">
-                      {/* ★ 画像タップで拡大 */}
                       <div 
                         className={`w-10 h-10 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700 flex-shrink-0 ${item.exercise.image_url ? 'cursor-pointer hover:opacity-80' : ''}`}
                         onClick={() => {
@@ -511,12 +455,11 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                   }`}
                 >
                   <div className="flex items-center space-x-3">
-                    {/* ★ 画像タップで拡大（親要素のonClickを発火させないように stopPropagation を追加） */}
                     <div 
                       className={`w-11 h-11 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700 flex-shrink-0 ${ex.image_url ? 'cursor-pointer hover:opacity-80' : ''}`}
                       onClick={(e) => {
                         if (ex.image_url) {
-                          e.stopPropagation(); // 誤って追加されないようにブロック
+                          e.stopPropagation();
                           setEnlargedImage(ex.image_url);
                         }
                       }}
