@@ -2,15 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Exercise, MuscleCategory, Workout } from '../types/database';
 import { CATEGORY_MAP } from '../types/database';
-import { 
-  Dumbbell, 
-  Lightbulb, 
-  Timer, 
-  Plus, 
-  Trash2, 
-  CheckCircle2, 
-  Circle, 
-  Flame, 
+import {
+  Dumbbell,
+  Lightbulb,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Circle,
   Save,
   Calendar,
   X,
@@ -38,8 +36,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
   const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>([]);
   const [workoutDate, setWorkoutDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
-  const [restSeconds, setRestSeconds] = useState<number>(0);
-  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
   const [startTime] = useState<Date>(new Date());
   const [saving, setSaving] = useState<boolean>(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
@@ -62,21 +58,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
-
-  useEffect(() => {
-    let interval: any;
-    if (isTimerRunning && restSeconds > 0) {
-      interval = setInterval(() => {
-        setRestSeconds((prev) => prev - 1);
-      }, 1000);
-    } else if (restSeconds === 0 && isTimerRunning) {
-      setIsTimerRunning(false);
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]);
-      }
-    }
-    return () => clearInterval(interval);
-  }, [isTimerRunning, restSeconds]);
 
   const fetchExercises = async () => {
     const { data: exData, error: exErr } = await supabase
@@ -229,12 +210,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         if (idx !== exerciseIndex) return item;
         const updatedSets = item.sets.map((s, sIdx) => {
           if (sIdx !== setIndex) return s;
-          const nextCompleted = !s.is_completed;
-          if (nextCompleted) {
-            setRestSeconds(90);
-            setIsTimerRunning(true);
-          }
-          return { ...s, is_completed: nextCompleted };
+          return { ...s, is_completed: !s.is_completed };
         });
         return { ...item, sets: updatedSets };
       })
@@ -369,36 +345,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       )}
 
       <div className="space-y-6 pb-24">
-        <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 p-3 flex justify-between items-center rounded-xl shadow-lg">
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1.5 text-amber-400 font-mono text-lg font-bold">
-              <Timer className={`w-5 h-5 ${isTimerRunning ? 'animate-pulse text-red-400' : ''}`} />
-              <span>{Math.floor(restSeconds / 60)}:{(restSeconds % 60).toString().padStart(2, '0')}</span>
-            </div>
-            {isTimerRunning && (
-              <button
-                type="button"
-                onClick={() => setIsTimerRunning(false)}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded cursor-pointer"
-              >
-                スキップ
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center space-x-4 text-xs font-medium">
-            <div className="flex items-center space-x-1 text-orange-400">
-              <Flame className="w-4 h-4" />
-              <span>約 {estimatedCalories} kcal</span>
-            </div>
-            <div className="text-slate-400">
-              総負荷: <span className="font-bold text-slate-200">{totalWeightVolume.toLocaleString()}</span> kg
-            </div>
-          </div>
-        </div>
-
         {/* ★ 日付選択とおすすめ部位の表示 */}
-        <div className="flex justify-between items-center -mt-3 mb-2 px-1">
+        <div className="flex justify-between items-center mb-2 px-1">
           <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
             <Calendar className="w-4 h-4 text-slate-400" />
             <input
