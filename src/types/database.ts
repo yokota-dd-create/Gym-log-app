@@ -23,6 +23,12 @@ export interface Workout {
   created_at?: string;
 }
 
+export interface RestOverride {
+  id: string;
+  rest_date: string;
+  created_at?: string;
+}
+
 export interface WorkoutSet {
   id?: string;
   workout_id?: string;

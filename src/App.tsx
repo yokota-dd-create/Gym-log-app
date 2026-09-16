@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import WorkoutLogger from './components/WorkoutLogger';
 import CalendarView from './components/CalendarView';
+import SchedulePlanner from './components/SchedulePlanner';
 import ExerciseDictionary from './components/ExerciseDictionary';
-import { Dumbbell, Calendar, BookOpen } from 'lucide-react';
+import { Dumbbell, Calendar, CalendarClock, BookOpen } from 'lucide-react';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'workout' | 'calendar' | 'exercises'>('workout');
+  const [activeTab, setActiveTab] = useState<'workout' | 'calendar' | 'plan' | 'exercises'>('workout');
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-cyan-500 selection:text-white">
@@ -30,12 +31,13 @@ export function App() {
       <main className="max-w-md mx-auto px-4 pt-4">
         {activeTab === 'workout' && <WorkoutLogger onWorkoutSaved={() => setActiveTab('calendar')} />}
         {activeTab === 'calendar' && <CalendarView />}
+        {activeTab === 'plan' && <SchedulePlanner />}
         {activeTab === 'exercises' && <ExerciseDictionary />}
       </main>
 
       {/* フッター ナビゲーションバー */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur border-t border-slate-800">
-        <div className="max-w-md mx-auto grid grid-cols-3 h-16">
+        <div className="max-w-md mx-auto grid grid-cols-4 h-16">
           <button
             type="button"
             onClick={() => setActiveTab('workout')}
@@ -55,6 +57,16 @@ export function App() {
           >
             <Calendar className="w-5 h-5" />
             <span className="text-[10px]">カレンダー</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('plan')}
+            className={`flex flex-col items-center justify-center space-y-1 transition cursor-pointer ${
+              activeTab === 'plan' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <CalendarClock className="w-5 h-5" />
+            <span className="text-[10px]">予定</span>
           </button>
           <button
             type="button"
