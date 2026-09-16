@@ -33,8 +33,9 @@ export const CalendarView = () => {
   const [editingWorkoutId, setEditingWorkoutId] = useState<string | null>(null);
   const [editingSets, setEditingSets] = useState<EditSet[]>([]);
 
-  // ★ 頻度のバリエーションを週2〜週6に拡張
-  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '6'>('5');
+  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '6'>(() => {
+    return (localStorage.getItem('gymlog_frequency') as any) || '5';
+  });
 
   useEffect(() => {
     fetchWorkouts();
@@ -44,7 +45,6 @@ export const CalendarView = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth() + 1;
     
-    // ★ カレンダーの表示月よりさらに14日前から取得し、サジェストの精度を担保する
     const startDate = new Date(year, month - 1, 1);
     startDate.setDate(startDate.getDate() - 14);
     
@@ -63,43 +63,44 @@ export const CalendarView = () => {
     setWorkouts(data || []);
   };
 
-  // ★ 過去の記録から最適な部位を割り出すスマートサジェスト機能
   const recommendedCategories = useMemo(() => {
     const lastTrained: Record<string, number> = {
       chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0, core: 0
     };
 
-    // 1. 各部位の「最後にトレーニングした日時」を記録
+    const targetDateObj = new Date();
+    targetDateObj.setHours(0,0,0,0);
+    const targetTime = targetDateObj.getTime();
+
     workouts.forEach(w => {
       if (!w.workout_date) return;
       const wDate = new Date(w.workout_date).setHours(0,0,0,0);
-      w.target_categories?.forEach(cat => {
-        if (wDate > lastTrained[cat]) {
-          lastTrained[cat] = wDate;
-        }
-      });
+      
+      // ★ 当日の記録はおすすめ計算から除外し、記録直後に表示が切り替わるのを防ぐ
+      if (wDate < targetTime) {
+        w.target_categories?.forEach(cat => {
+          if (wDate > lastTrained[cat]) {
+            lastTrained[cat] = wDate;
+          }
+        });
+      }
     });
 
-    // 2. 頻度ごとの王道の分割法（スプリット）定義
     const SPLITS: Record<string, MuscleCategory[][]> = {
-      '2': [['chest', 'shoulders', 'arms'], ['back', 'legs', 'core']], // 上半身メイン / 背中・下半身
-      '3': [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']], // PPL（プッシュ/プル/レッグ）
-      '4': [['chest', 'arms'], ['back', 'core'], ['legs'], ['shoulders']], // 四分割
-      '5': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms']], // 五分割（ブロスプリット）
-      '6': [['chest', 'shoulders'], ['back', 'arms'], ['legs']] // 高頻度PPL
+      '2': [['chest', 'shoulders', 'arms'], ['back', 'legs', 'core']],
+      '3': [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
+      '4': [['chest', 'arms'], ['back', 'core'], ['legs'], ['shoulders']],
+      '5': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms']],
+      '6': [['chest', 'shoulders'], ['back', 'arms'], ['legs']]
     };
 
     const groups = SPLITS[frequency] || SPLITS['5'];
     let bestGroup: MuscleCategory[] = [];
     let maxDaysSince = -1;
-    const today = new Date().setHours(0,0,0,0);
 
-    // 3. 一番「休ませている期間が長い」グループを割り出す
     groups.forEach(group => {
-      // そのグループ内で一番「最近」やった部位の日付を取得
       const groupLastTrained = Math.max(...group.map(m => lastTrained[m] || 0));
-      // 何日休んでいるか計算（一度もやっていない場合は999日扱い）
-      const daysSince = groupLastTrained === 0 ? 999 : (today - groupLastTrained) / (1000 * 60 * 60 * 24);
+      const daysSince = groupLastTrained === 0 ? 999 : (targetTime - groupLastTrained) / (1000 * 60 * 60 * 24);
       
       if (daysSince > maxDaysSince) {
         maxDaysSince = daysSince;
@@ -107,7 +108,6 @@ export const CalendarView = () => {
       }
     });
 
-    // もし一番休んでいる部位でも、今日すでにトレーニング済みならお休みを推奨
     return maxDaysSince <= 0 ? [] : bestGroup;
   }, [workouts, frequency]);
 
@@ -217,7 +217,6 @@ export const CalendarView = () => {
       .update({ estimated_calories: newCalories })
       .eq('id', editingWorkoutId);
 
-    // ★ 最新のデータで全体を再読み込みして、サジェストを更新する
     await fetchWorkouts();
 
     if (selectedDate) {
@@ -420,12 +419,14 @@ export const CalendarView = () => {
                                       <button 
                                         onClick={handleSaveEdit}
                                         className="p-1.5 ml-1 text-emerald-400 hover:text-emerald-300 transition bg-emerald-900/30 rounded-md border border-emerald-700/50"
+                                        title="保存"
                                       >
                                         <Save className="w-3.5 h-3.5" />
                                       </button>
                                       <button 
                                         onClick={handleCancelEdit}
                                         className="p-1.5 ml-1 text-slate-400 hover:text-slate-300 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                        title="キャンセル"
                                       >
                                         <X className="w-3.5 h-3.5" />
                                       </button>
@@ -435,12 +436,14 @@ export const CalendarView = () => {
                                       <button 
                                         onClick={() => handleStartEdit(workout)}
                                         className="p-1.5 ml-1 text-cyan-400 hover:text-cyan-300 transition bg-cyan-900/30 rounded-md border border-cyan-700/50"
+                                        title="編集"
                                       >
                                         <Pencil className="w-3.5 h-3.5" />
                                       </button>
                                       <button 
                                         onClick={() => handleDeleteWorkout(workout.id)}
                                         className="p-1.5 ml-1 text-slate-500 hover:text-red-400 transition bg-slate-900/50 rounded-md border border-slate-700/50"
+                                        title="削除"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -548,7 +551,12 @@ export const CalendarView = () => {
           </h3>
           <select
             value={frequency}
-            onChange={(e) => setFrequency(e.target.value as any)}
+            onChange={(e) => {
+              setFrequency(e.target.value as any);
+              localStorage.setItem('gymlog_frequency', e.target.value);
+              // logger側にも即座に反映させるためのイベント
+              window.dispatchEvent(new Event('storage'));
+            }}
             className="bg-slate-800 text-xs font-bold text-slate-300 rounded-lg border border-slate-700 px-3 py-1.5 focus:outline-none focus:border-amber-500"
           >
             <option value="2">週2回 (二分割)</option>

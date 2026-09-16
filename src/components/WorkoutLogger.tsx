@@ -1,17 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../supabaseClient';
-import type { Exercise, MuscleCategory } from '../types/database';
+import type { Exercise, MuscleCategory, Workout } from '../types/database';
 import { CATEGORY_MAP } from '../types/database';
 import { 
   Dumbbell, 
   Lightbulb, 
+  Timer, 
   Plus, 
   Trash2, 
   CheckCircle2, 
   Circle, 
+  Flame, 
   Save,
   Calendar,
-  X
+  X,
+  Sparkles
 } from 'lucide-react';
 
 interface LocalWorkoutSet {
@@ -35,13 +38,45 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
   const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>([]);
   const [workoutDate, setWorkoutDate] = useState<string>(new Date().toISOString().split('T')[0]);
   
+  const [restSeconds, setRestSeconds] = useState<number>(0);
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
   const [startTime] = useState<Date>(new Date());
   const [saving, setSaving] = useState<boolean>(false);
   const [enlargedImage, setEnlargedImage] = useState<string | null>(null);
 
+  // ★ おすすめ機能のための履歴と設定
+  const [workoutsHistory, setWorkoutsHistory] = useState<Workout[]>([]);
+  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '6'>(() => {
+    return (localStorage.getItem('gymlog_frequency') as any) || '5';
+  });
+
   useEffect(() => {
     fetchExercises();
+    fetchWorkoutsHistory();
+    
+    // カレンダー側で頻度が変更された時の同期
+    const handleStorage = () => {
+      const f = localStorage.getItem('gymlog_frequency');
+      if (f) setFrequency(f as any);
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
+  useEffect(() => {
+    let interval: any;
+    if (isTimerRunning && restSeconds > 0) {
+      interval = setInterval(() => {
+        setRestSeconds((prev) => prev - 1);
+      }, 1000);
+    } else if (restSeconds === 0 && isTimerRunning) {
+      setIsTimerRunning(false);
+      if ('vibrate' in navigator) {
+        navigator.vibrate([200, 100, 200]);
+      }
+    }
+    return () => clearInterval(interval);
+  }, [isTimerRunning, restSeconds]);
 
   const fetchExercises = async () => {
     const { data: exData, error: exErr } = await supabase
@@ -70,6 +105,70 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
 
     setExercisesMaster(combined);
   };
+
+  const fetchWorkoutsHistory = async () => {
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 1);
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 30);
+
+    const { data } = await supabase
+      .from('workouts')
+      .select('*')
+      .gte('workout_date', startDate.toISOString().split('T')[0])
+      .lte('workout_date', endDate.toISOString().split('T')[0]);
+
+    if (data) setWorkoutsHistory(data);
+  };
+
+  // ★ 日付と連動したスマートサジェスト
+  const recommendedCategories = useMemo(() => {
+    const lastTrained: Record<string, number> = {
+      chest: 0, back: 0, legs: 0, shoulders: 0, arms: 0, core: 0
+    };
+
+    const targetDateObj = new Date(workoutDate);
+    targetDateObj.setHours(0,0,0,0);
+    const targetTime = targetDateObj.getTime();
+
+    workoutsHistory.forEach(w => {
+      if (!w.workout_date) return;
+      const wDate = new Date(w.workout_date).setHours(0,0,0,0);
+      
+      // 選択した日付「より前」の記録だけを使う
+      if (wDate < targetTime) {
+        w.target_categories?.forEach(cat => {
+          if (wDate > lastTrained[cat]) {
+            lastTrained[cat] = wDate;
+          }
+        });
+      }
+    });
+
+    const SPLITS: Record<string, MuscleCategory[][]> = {
+      '2': [['chest', 'shoulders', 'arms'], ['back', 'legs', 'core']],
+      '3': [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
+      '4': [['chest', 'arms'], ['back', 'core'], ['legs'], ['shoulders']],
+      '5': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms']],
+      '6': [['chest', 'shoulders'], ['back', 'arms'], ['legs']]
+    };
+
+    const groups = SPLITS[frequency] || SPLITS['5'];
+    let bestGroup: MuscleCategory[] = [];
+    let maxDaysSince = -1;
+
+    groups.forEach(group => {
+      const groupLastTrained = Math.max(...group.map(m => lastTrained[m] || 0));
+      const daysSince = groupLastTrained === 0 ? 999 : (targetTime - groupLastTrained) / (1000 * 60 * 60 * 24);
+      
+      if (daysSince > maxDaysSince) {
+        maxDaysSince = daysSince;
+        bestGroup = group;
+      }
+    });
+
+    return maxDaysSince <= 0 ? [] : bestGroup;
+  }, [workoutsHistory, frequency, workoutDate]);
 
   const handleAddExercise = (exercise: Exercise) => {
     if (activeExercises.some((ae) => ae.exercise.id === exercise.id)) return;
@@ -130,7 +229,12 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         if (idx !== exerciseIndex) return item;
         const updatedSets = item.sets.map((s, sIdx) => {
           if (sIdx !== setIndex) return s;
-          return { ...s, is_completed: !s.is_completed };
+          const nextCompleted = !s.is_completed;
+          if (nextCompleted) {
+            setRestSeconds(90);
+            setIsTimerRunning(true);
+          }
+          return { ...s, is_completed: nextCompleted };
         });
         return { ...item, sets: updatedSets };
       })
@@ -173,7 +277,24 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
 
     setSaving(true);
     const durationMinutes = Math.max(1, Math.round((new Date().getTime() - startTime.getTime()) / 60000));
-    const targetCategories = Array.from(new Set(activeExercises.map((ae) => ae.exercise.category)));
+    
+    // ★ 3セット以上実施した部位だけをメインとして判定
+    const categorySetCounts = new Map<string, number>();
+    activeExercises.forEach(item => {
+      const compSets = item.sets.filter(s => s.is_completed).length;
+      const cat = item.exercise.category;
+      categorySetCounts.set(cat, (categorySetCounts.get(cat) || 0) + compSets);
+    });
+
+    const targetCategories = Array.from(categorySetCounts.entries())
+      .filter(([_, count]) => count >= 3)
+      .map(([cat]) => cat);
+
+    // 全てが3セット未満だった場合は、一番多くやった部位を救済として採用
+    if (targetCategories.length === 0 && activeExercises.length > 0) {
+      const maxCat = Array.from(categorySetCounts.entries()).reduce((a, b) => a[1] > b[1] ? a : b)[0];
+      targetCategories.push(maxCat);
+    }
 
     const { data: workout, error: wErr } = await supabase
       .from('workouts')
@@ -210,6 +331,9 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       await supabase.from('workout_sets').insert(allSets);
     }
 
+    // 保存後に履歴も更新しておく
+    setWorkoutsHistory(prev => [...prev, workout]);
+
     setSaving(false);
     alert('🎉 ワークアウトを記録しました！');
     setActiveExercises([]);
@@ -245,8 +369,36 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       )}
 
       <div className="space-y-6 pb-24">
-        
-        <div className="flex justify-end pt-2 pr-1">
+        <div className="sticky top-0 z-30 bg-slate-900/90 backdrop-blur border-b border-slate-800 p-3 flex justify-between items-center rounded-xl shadow-lg">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1.5 text-amber-400 font-mono text-lg font-bold">
+              <Timer className={`w-5 h-5 ${isTimerRunning ? 'animate-pulse text-red-400' : ''}`} />
+              <span>{Math.floor(restSeconds / 60)}:{(restSeconds % 60).toString().padStart(2, '0')}</span>
+            </div>
+            {isTimerRunning && (
+              <button
+                type="button"
+                onClick={() => setIsTimerRunning(false)}
+                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded cursor-pointer"
+              >
+                スキップ
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center space-x-4 text-xs font-medium">
+            <div className="flex items-center space-x-1 text-orange-400">
+              <Flame className="w-4 h-4" />
+              <span>約 {estimatedCalories} kcal</span>
+            </div>
+            <div className="text-slate-400">
+              総負荷: <span className="font-bold text-slate-200">{totalWeightVolume.toLocaleString()}</span> kg
+            </div>
+          </div>
+        </div>
+
+        {/* ★ 日付選択とおすすめ部位の表示 */}
+        <div className="flex justify-between items-center -mt-3 mb-2 px-1">
           <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
             <Calendar className="w-4 h-4 text-slate-400" />
             <input
@@ -255,6 +407,26 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
               onChange={(e) => setWorkoutDate(e.target.value)}
               className="bg-transparent text-sm font-bold text-slate-200 focus:outline-none"
             />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-[10px] font-bold text-slate-400 flex items-center">
+              <Sparkles className="w-3 h-3 text-amber-400 mr-1" />
+              おすすめ:
+            </span>
+            <div className="flex gap-1">
+              {recommendedCategories.length > 0 ? (
+                recommendedCategories.map(cat => (
+                  <span key={cat} className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${CATEGORY_MAP[cat as MuscleCategory]?.badgeClass}`}>
+                    {CATEGORY_MAP[cat as MuscleCategory]?.label}
+                  </span>
+                ))
+              ) : (
+                <span className="text-[10px] text-slate-400 font-medium bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                  オフ 🍵
+                </span>
+              )}
+            </div>
           </div>
         </div>
 
@@ -408,7 +580,6 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
           </div>
         )}
 
-        {/* 種目追加エリア */}
         <div className="space-y-3 pt-2">
           <h2 className="text-sm font-bold text-slate-400 tracking-wider">種目を追加する</h2>
 
