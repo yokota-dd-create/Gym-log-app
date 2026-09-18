@@ -16,11 +16,11 @@ import {
 } from 'lucide-react';
 
 const EQUIPMENT_MAP: Record<EquipmentType | 'all', { label: string; badge: string }> = {
-  all: { label: 'すべて', badge: 'bg-stone-600 text-stone-200' },
-  machine: { label: 'マシン', badge: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
-  free_weight: { label: 'フリー重量', badge: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' },
-  cable: { label: 'ケーブル', badge: 'bg-sky-500/10 text-sky-400 border-sky-500/30' },
-  bodyweight: { label: '自重', badge: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30' },
+  all: { label: 'すべて', badge: 'bg-zinc-100 text-zinc-800' },
+  machine: { label: 'マシン', badge: 'bg-amber-50 text-amber-600 border-amber-200' },
+  free_weight: { label: 'フリー重量', badge: 'bg-emerald-50 text-emerald-600 border-emerald-200' },
+  cable: { label: 'ケーブル', badge: 'bg-sky-50 text-sky-700 border-sky-200' },
+  bodyweight: { label: '自重', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
 };
 
 export const ExerciseDictionary: React.FC = () => {
@@ -103,20 +103,20 @@ export const ExerciseDictionary: React.FC = () => {
     <div className="space-y-5 pb-24">
       {/* 検索バー */}
       <div className="relative">
-        <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="種目名・フォームのキーワードで検索..."
-          className="w-full bg-stone-900 border border-stone-600 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-stone-100 placeholder-stone-400 focus:outline-none focus:border-orange-500 transition shadow-inner"
+          className="w-full bg-zinc-100 border border-zinc-200 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition shadow-inner"
         />
       </div>
 
       {/* 絞り込みフィルター（部位） */}
       <div className="space-y-2">
-        <div className="flex items-center space-x-1.5 text-xs font-bold text-stone-300">
-          <Layers className="w-3.5 h-3.5 text-orange-400" />
+        <div className="flex items-center space-x-1.5 text-xs font-bold text-zinc-600">
+          <Layers className="w-3.5 h-3.5 text-orange-600" />
           <span>対象部位で絞り込み</span>
         </div>
         <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-none">
@@ -125,8 +125,8 @@ export const ExerciseDictionary: React.FC = () => {
             onClick={() => setSelectedCategory('all')}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               selectedCategory === 'all'
-                ? 'bg-orange-500 text-stone-950 font-bold shadow-md shadow-orange-950/40'
-                : 'bg-stone-900 border border-stone-600 text-stone-300 hover:bg-stone-600'
+                ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/25'
+                : 'bg-zinc-100 border border-zinc-200 text-zinc-600 hover:bg-zinc-200'
             }`}
           >
             すべての部位
@@ -138,8 +138,8 @@ export const ExerciseDictionary: React.FC = () => {
               onClick={() => setSelectedCategory(cat)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
                 selectedCategory === cat
-                  ? 'bg-orange-500 text-stone-950 font-bold shadow-md shadow-orange-950/40'
-                  : 'bg-stone-900 border border-stone-600 text-stone-300 hover:bg-stone-600'
+                  ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/25'
+                  : 'bg-zinc-100 border border-zinc-200 text-zinc-600 hover:bg-zinc-200'
               }`}
             >
               {CATEGORY_MAP[cat].label}
@@ -150,8 +150,8 @@ export const ExerciseDictionary: React.FC = () => {
 
       {/* 絞り込みフィルター（器具タイプ） */}
       <div className="space-y-2">
-        <div className="flex items-center space-x-1.5 text-xs font-bold text-stone-300">
-          <Dumbbell className="w-3.5 h-3.5 text-amber-400" />
+        <div className="flex items-center space-x-1.5 text-xs font-bold text-zinc-600">
+          <Dumbbell className="w-3.5 h-3.5 text-amber-600" />
           <span>器具タイプで絞り込み</span>
         </div>
         <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-none">
@@ -162,8 +162,8 @@ export const ExerciseDictionary: React.FC = () => {
               onClick={() => setSelectedEquipment(eq)}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition border cursor-pointer ${
                 selectedEquipment === eq
-                  ? 'bg-stone-200 text-stone-950 font-bold border-stone-200 shadow-md shadow-white/10'
-                  : 'bg-stone-700 border-stone-600 text-stone-300 hover:bg-stone-600'
+                  ? 'bg-zinc-900 text-white font-bold border-zinc-900 shadow-md shadow-zinc-900/10'
+                  : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-200'
               }`}
             >
               {EQUIPMENT_MAP[eq].label}
@@ -173,14 +173,14 @@ export const ExerciseDictionary: React.FC = () => {
       </div>
 
       {/* 件数表示 */}
-      <div className="text-right text-xs text-stone-400 pr-1">
-        該当件数: <strong className="text-stone-200">{filteredExercises.length}</strong> 件
+      <div className="text-right text-xs text-zinc-500 pr-1">
+        該当件数: <strong className="text-zinc-800">{filteredExercises.length}</strong> 件
       </div>
 
       {/* 種目一覧カード群 */}
       <div className="space-y-3">
         {filteredExercises.length === 0 ? (
-          <div className="bg-stone-700 border border-stone-600 rounded-2xl p-8 text-center text-xs text-stone-400">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-8 text-center text-xs text-zinc-500">
             該当する種目が見つかりませんでした
           </div>
         ) : (
@@ -193,8 +193,8 @@ export const ExerciseDictionary: React.FC = () => {
             return (
               <div
                 key={ex.id}
-                className={`bg-stone-700 border transition-all rounded-2xl overflow-hidden shadow-lg ${
-                  isExpanded ? 'border-orange-500/50 shadow-orange-950/20' : 'border-stone-600 hover:border-stone-600'
+                className={`bg-white border transition-all rounded-2xl overflow-hidden shadow-lg ${
+                  isExpanded ? 'border-orange-300 shadow-orange-500/25' : 'border-zinc-200 hover:border-zinc-200'
                 }`}
               >
                 {/* ヘッダー部（画像 or アイコン + 種目情報） */}
@@ -204,7 +204,7 @@ export const ExerciseDictionary: React.FC = () => {
                 >
                   <div className="flex items-center space-x-3 min-w-0">
                     {/* 機器画像 / アイコン */}
-                    <div className="w-14 h-14 bg-stone-600 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-stone-600 relative">
+                    <div className="w-14 h-14 bg-zinc-100 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-zinc-200 relative">
                       {ex.image_url ? (
                         <img
                           src={ex.image_url}
@@ -212,7 +212,7 @@ export const ExerciseDictionary: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <Dumbbell className="w-6 h-6 text-stone-300" />
+                        <Dumbbell className="w-6 h-6 text-zinc-600" />
                       )}
                     </div>
 
@@ -225,41 +225,41 @@ export const ExerciseDictionary: React.FC = () => {
                           {eqMeta.label}
                         </span>
                       </div>
-                      <h3 className="font-bold text-sm text-stone-100 truncate">{ex.name}</h3>
+                      <h3 className="font-bold text-sm text-zinc-900 truncate">{ex.name}</h3>
                     </div>
                   </div>
 
-                  <div className="p-1 text-stone-300 flex-shrink-0">
+                  <div className="p-1 text-zinc-600 flex-shrink-0">
                     {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </div>
                 </div>
 
                 {/* 展開エリア */}
                 {isExpanded && (
-                  <div className="border-t border-stone-600 bg-stone-800 p-4 space-y-4">
+                  <div className="border-t border-zinc-200 bg-zinc-50 p-4 space-y-4">
                     {/* ターゲット部位ハイライト図 */}
-                    <div className="bg-stone-900 border border-stone-600 rounded-xl p-3.5 flex items-center space-x-4">
+                    <div className="bg-zinc-100 border border-zinc-200 rounded-xl p-3.5 flex items-center space-x-4">
                       <MuscleDiagram category={ex.category} className="w-16 h-auto flex-shrink-0" />
                       <div className="space-y-1">
-                        <div className="flex items-center space-x-1.5 text-xs font-bold text-stone-200">
-                          <Layers className="w-3.5 h-3.5 text-orange-400" />
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-zinc-800">
+                          <Layers className="w-3.5 h-3.5 text-orange-600" />
                           <span>ターゲット部位</span>
                         </div>
                         <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border font-bold ${catMeta.badgeClass}`}>
                           {catMeta.label}
                         </span>
-                        <p className="text-[11px] text-stone-400">ハイライトした部分が重点的に働く部位です</p>
+                        <p className="text-[11px] text-zinc-500">ハイライトした部分が重点的に働く部位です</p>
                       </div>
                     </div>
 
                     {/* 公式フォーム解説 */}
                     {ex.default_tips && (
-                      <div className="bg-stone-900 border border-stone-600 rounded-xl p-3.5 space-y-2">
-                        <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-400">
+                      <div className="bg-zinc-100 border border-zinc-200 rounded-xl p-3.5 space-y-2">
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-amber-600">
                           <Lightbulb className="w-4 h-4" />
                           <span>基本フォーム & 注意ポイント</span>
                         </div>
-                        <p className="text-xs text-stone-200 leading-relaxed whitespace-pre-line">
+                        <p className="text-xs text-zinc-800 leading-relaxed whitespace-pre-line">
                           {ex.default_tips.replace(/\\n/g, '\n')}
                         </p>
                       </div>
@@ -268,12 +268,12 @@ export const ExerciseDictionary: React.FC = () => {
                     {/* マイ設定・フォームメモ */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
-                        <span className="text-xs font-bold text-stone-200 flex items-center space-x-1">
-                          <Sparkles className="w-3.5 h-3.5 text-orange-400" />
+                        <span className="text-xs font-bold text-zinc-800 flex items-center space-x-1">
+                          <Sparkles className="w-3.5 h-3.5 text-orange-600" />
                           <span>マイ設定・調整メモ（自動保存対応）</span>
                         </span>
                         {isSaved && (
-                          <span className="text-[10px] text-emerald-400 flex items-center space-x-1 animate-pulse">
+                          <span className="text-[10px] text-emerald-600 flex items-center space-x-1 animate-pulse">
                             <Check className="w-3.5 h-3.5" />
                             <span>保存完了</span>
                           </span>
@@ -288,14 +288,14 @@ export const ExerciseDictionary: React.FC = () => {
                           setEditingNotes((prev) => ({ ...prev, [ex.id]: val }));
                         }}
                         placeholder="例: シートの高さ4番、グリップは広めに持つ、足の位置は前寄りで..."
-                        className="w-full bg-stone-900 border border-stone-600 rounded-xl p-3 text-xs text-stone-100 placeholder-stone-400 focus:outline-none focus:border-orange-500 transition leading-relaxed"
+                        className="w-full bg-zinc-100 border border-zinc-200 rounded-xl p-3 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-orange-500 transition leading-relaxed"
                       />
 
                       <div className="flex justify-end">
                         <button
                           type="button"
                           onClick={() => handleSaveNote(ex.id)}
-                          className="px-3.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 rounded-xl text-xs font-bold text-white flex items-center space-x-1.5 transition cursor-pointer shadow-md shadow-orange-900/40"
+                          className="px-3.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 rounded-xl text-xs font-bold text-white flex items-center space-x-1.5 transition cursor-pointer shadow-md shadow-orange-500/25"
                         >
                           <Save className="w-3.5 h-3.5" />
                           <span>メモを保存</span>

@@ -16,8 +16,8 @@ export default defineConfig({
         name: 'GymLog',
         short_name: 'GymLog',
         description: 'Gym Workout Tracker',
-        theme_color: '#1c1917',
-        background_color: '#1c1917',
+        theme_color: '#f4f4f5',
+        background_color: '#f4f4f5',
         display: 'standalone',
         icons: [
           {

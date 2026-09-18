@@ -47,10 +47,10 @@ export interface CategoryMeta {
 }
 
 export const CATEGORY_MAP: Record<MuscleCategory, CategoryMeta> = {
-  chest: { label: '胸', color: 'bg-red-500', badgeClass: 'bg-red-500/10 text-red-400 border-red-500/30' },
-  back: { label: '背中', color: 'bg-blue-500', badgeClass: 'bg-blue-500/10 text-blue-400 border-blue-500/30' },
-  legs: { label: '脚', color: 'bg-green-500', badgeClass: 'bg-green-500/10 text-green-400 border-green-500/30' },
-  shoulders: { label: '肩', color: 'bg-amber-500', badgeClass: 'bg-amber-500/10 text-amber-400 border-amber-500/30' },
-  arms: { label: '腕', color: 'bg-purple-500', badgeClass: 'bg-purple-500/10 text-purple-400 border-purple-500/30' },
-  core: { label: '腹・体幹', color: 'bg-cyan-500', badgeClass: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30' },
+  chest: { label: '胸', color: 'bg-red-500', badgeClass: 'bg-red-50 text-red-600 border-red-200' },
+  back: { label: '背中', color: 'bg-blue-500', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200' },
+  legs: { label: '脚', color: 'bg-green-500', badgeClass: 'bg-green-50 text-green-700 border-green-200' },
+  shoulders: { label: '肩', color: 'bg-amber-500', badgeClass: 'bg-amber-50 text-amber-600 border-amber-200' },
+  arms: { label: '腕', color: 'bg-purple-500', badgeClass: 'bg-purple-50 text-purple-700 border-purple-200' },
+  core: { label: '腹・体幹', color: 'bg-cyan-500', badgeClass: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
 };

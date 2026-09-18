@@ -195,10 +195,10 @@ export const SchedulePlanner = () => {
 
   return (
     <div className="space-y-4 pb-24">
-      <div className="bg-stone-700 rounded-2xl border border-stone-600 p-4 shadow-lg">
+      <div className="bg-white rounded-2xl border border-zinc-200 p-4 shadow-lg">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-bold text-stone-100 flex items-center">
-            <Sparkles className="w-4 h-4 text-amber-400 mr-1.5" />
+          <h3 className="text-sm font-bold text-zinc-900 flex items-center">
+            <Sparkles className="w-4 h-4 text-amber-600 mr-1.5" />
             トレーニング予定
           </h3>
           <select
@@ -208,7 +208,7 @@ export const SchedulePlanner = () => {
               localStorage.setItem('gymlog_frequency', e.target.value);
               window.dispatchEvent(new Event('storage'));
             }}
-            className="bg-stone-600 text-xs font-bold text-stone-200 rounded-lg border border-stone-600 px-3 py-1.5 focus:outline-none focus:border-amber-500"
+            className="bg-zinc-100 text-xs font-bold text-zinc-800 rounded-lg border border-zinc-200 px-3 py-1.5 focus:outline-none focus:border-amber-500"
           >
             <option value="2">週2回 (二分割)</option>
             <option value="3">週3回 (PPL)</option>
@@ -219,15 +219,15 @@ export const SchedulePlanner = () => {
             <option value="6b">週6回 (6分割・中級者向け)</option>
           </select>
         </div>
-        <p className="text-xs text-stone-400">
+        <p className="text-xs text-zinc-500">
           行けない日は「行けない」を押すと予定が組み直されます。
         </p>
       </div>
 
-      <div className="bg-stone-700 rounded-2xl border border-stone-600 p-4 shadow-lg space-y-2">
-        <h3 className="text-xs font-bold text-stone-300 tracking-wider mb-1">過去{PAST_DAYS}日間の実績</h3>
+      <div className="bg-white rounded-2xl border border-zinc-200 p-4 shadow-lg space-y-2">
+        <h3 className="text-xs font-bold text-zinc-600 tracking-wider mb-1">過去{PAST_DAYS}日間の実績</h3>
         {loading ? (
-          <p className="text-sm text-stone-400 text-center py-4">読み込み中...</p>
+          <p className="text-sm text-zinc-500 text-center py-4">読み込み中...</p>
         ) : (
           pastSchedule.map((day) => {
             const weekday = WEEKDAY_LABELS[day.date.getDay()];
@@ -235,14 +235,14 @@ export const SchedulePlanner = () => {
             return (
               <div
                 key={day.dateStr}
-                className="flex items-center justify-between rounded-xl p-3 border bg-stone-900 border-stone-600"
+                className="flex items-center justify-between rounded-xl p-3 border bg-zinc-100 border-zinc-200"
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-14 flex-shrink-0">
-                    <div className="text-xs font-bold text-stone-300">
+                    <div className="text-xs font-bold text-zinc-600">
                       {day.date.getMonth() + 1}/{day.date.getDate()}
                     </div>
-                    <div className="text-[10px] text-stone-400">({weekday})</div>
+                    <div className="text-[10px] text-zinc-500">({weekday})</div>
                   </div>
 
                   <div className="flex flex-wrap gap-1">
@@ -256,24 +256,24 @@ export const SchedulePlanner = () => {
                         </span>
                       ))
                     ) : (
-                      <span className="text-[10px] text-stone-400 font-medium bg-stone-900 px-2 py-0.5 rounded-full border border-stone-600">
+                      <span className="text-[10px] text-zinc-500 font-medium bg-zinc-100 px-2 py-0.5 rounded-full border border-zinc-200">
                         休み
                       </span>
                     )}
                   </div>
                 </div>
 
-                {hasRecord && <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
+                {hasRecord && <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />}
               </div>
             );
           })
         )}
       </div>
 
-      <div className="bg-stone-700 rounded-2xl border border-stone-600 p-4 shadow-lg space-y-2">
-        <h3 className="text-xs font-bold text-stone-300 tracking-wider mb-1">今後{PLAN_DAYS}日の予定モデル</h3>
+      <div className="bg-white rounded-2xl border border-zinc-200 p-4 shadow-lg space-y-2">
+        <h3 className="text-xs font-bold text-zinc-600 tracking-wider mb-1">今後{PLAN_DAYS}日の予定モデル</h3>
         {loading ? (
-          <p className="text-sm text-stone-400 text-center py-4">読み込み中...</p>
+          <p className="text-sm text-zinc-500 text-center py-4">読み込み中...</p>
         ) : (
           schedule.map((day) => {
             const weekday = WEEKDAY_LABELS[day.date.getDay()];
@@ -281,15 +281,15 @@ export const SchedulePlanner = () => {
               <div
                 key={day.dateStr}
                 className={`flex items-center justify-between rounded-xl p-3 border ${
-                  day.isToday ? 'bg-orange-950/30 border-orange-700/50' : 'bg-stone-900 border-stone-600'
+                  day.isToday ? 'bg-orange-50 border-orange-300' : 'bg-zinc-100 border-zinc-200'
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-14 flex-shrink-0">
-                    <div className="text-xs font-bold text-stone-200">
+                    <div className="text-xs font-bold text-zinc-800">
                       {day.date.getMonth() + 1}/{day.date.getDate()}
                     </div>
-                    <div className="text-[10px] text-stone-400">({weekday}){day.isToday ? ' 今日' : ''}</div>
+                    <div className="text-[10px] text-zinc-500">({weekday}){day.isToday ? ' 今日' : ''}</div>
                   </div>
 
                   <div className="flex flex-wrap gap-1">
@@ -303,7 +303,7 @@ export const SchedulePlanner = () => {
                         </span>
                       ))
                     ) : (
-                      <span className="text-[10px] text-stone-300 font-medium bg-stone-900 px-2 py-0.5 rounded-full border border-stone-600">
+                      <span className="text-[10px] text-zinc-600 font-medium bg-zinc-100 px-2 py-0.5 rounded-full border border-zinc-200">
                         {day.type === 'rest_forced' ? '休み(確定)' : 'オフ 🍵'}
                       </span>
                     )}
@@ -311,15 +311,15 @@ export const SchedulePlanner = () => {
                 </div>
 
                 {day.type === 'done' ? (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                 ) : (
                   <button
                     type="button"
                     onClick={() => handleToggleOverride(day.dateStr, day.isOverride)}
                     className={`flex items-center space-x-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition cursor-pointer flex-shrink-0 ${
                       day.isOverride
-                        ? 'bg-emerald-900/30 border-emerald-700/50 text-emerald-400 hover:bg-emerald-900/50'
-                        : 'bg-stone-700 border-stone-600 text-stone-300 hover:text-red-400 hover:border-red-800'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-600 hover:bg-emerald-100'
+                        : 'bg-white border-zinc-200 text-zinc-600 hover:text-red-600 hover:border-red-300'
                     }`}
                   >
                     {day.isOverride ? (

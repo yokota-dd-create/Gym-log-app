@@ -1,16 +1,16 @@
 import type { MuscleCategory } from '../types/database';
 
 const HIGHLIGHT_COLOR: Record<MuscleCategory, string> = {
-  chest: '#fb7185',
-  back: '#60a5fa',
-  legs: '#34d399',
-  shoulders: '#fbbf24',
-  arms: '#c084fc',
-  core: '#22d3ee',
+  chest: '#f43f5e',
+  back: '#3b82f6',
+  legs: '#10b981',
+  shoulders: '#f59e0b',
+  arms: '#a855f7',
+  core: '#06b6d4',
 };
 
-const BODY_FILL = '#57534e';
-const BODY_STROKE = '#78716c';
+const BODY_FILL = '#d4d4d8';
+const BODY_STROKE = '#a1a1aa';
 
 const TORSO_PATH = 'M30 35 Q30 33 33 33 L67 33 Q70 33 70 35 L72 90 Q72 94 68 94 L32 94 Q28 94 28 90 Z';
 const LEFT_ARM_PATH = 'M28 37 Q18 38 15 48 L11 95 Q10 99 14 99 L20 99 Q23 99 23 95 L26 50 Z';
