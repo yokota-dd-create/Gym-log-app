@@ -5,6 +5,7 @@ import { CATEGORY_MAP } from '../types/database';
 import { Ban, RotateCcw, CheckCircle2, Sparkles } from 'lucide-react';
 
 const PLAN_DAYS = 7;
+const PAST_DAYS = 7;
 const WEEKDAY_LABELS = ['日', '月', '火', '水', '木', '金', '土'];
 
 const SPLITS: Record<string, MuscleCategory[][]> = {
@@ -23,6 +24,12 @@ type DayPlan = {
   isToday: boolean;
   isOverride: boolean;
   type: 'done' | 'rest_forced' | 'rest_natural' | 'planned';
+  categories: MuscleCategory[];
+};
+
+type PastDayPlan = {
+  date: Date;
+  dateStr: string;
   categories: MuscleCategory[];
 };
 
@@ -164,13 +171,35 @@ export const SchedulePlanner = () => {
     return result;
   }, [workouts, overrides, frequency]);
 
+  const pastSchedule = useMemo<PastDayPlan[]>(() => {
+    const todayObj = new Date();
+    todayObj.setHours(0, 0, 0, 0);
+
+    const byDate = new Map<string, Set<MuscleCategory>>();
+    workouts.forEach((w) => {
+      if (!w.workout_date) return;
+      const wDateStr = w.workout_date.slice(0, 10);
+      if (!byDate.has(wDateStr)) byDate.set(wDateStr, new Set());
+      w.target_categories?.forEach((cat) => byDate.get(wDateStr)!.add(cat));
+    });
+
+    const result: PastDayPlan[] = [];
+    for (let offset = PAST_DAYS; offset >= 1; offset--) {
+      const date = new Date(todayObj);
+      date.setDate(date.getDate() - offset);
+      const dateStr = toDateStr(date);
+      result.push({ date, dateStr, categories: Array.from(byDate.get(dateStr) || []) });
+    }
+    return result;
+  }, [workouts]);
+
   return (
     <div className="space-y-4 pb-24">
       <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg">
         <div className="flex justify-between items-center mb-3">
           <h3 className="text-sm font-bold text-slate-200 flex items-center">
             <Sparkles className="w-4 h-4 text-amber-400 mr-1.5" />
-            今後{PLAN_DAYS}日の予定モデル
+            トレーニング予定
           </h3>
           <select
             value={frequency}
@@ -196,6 +225,53 @@ export const SchedulePlanner = () => {
       </div>
 
       <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg space-y-2">
+        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-1">過去{PAST_DAYS}日間の実績</h3>
+        {loading ? (
+          <p className="text-sm text-slate-500 text-center py-4">読み込み中...</p>
+        ) : (
+          pastSchedule.map((day) => {
+            const weekday = WEEKDAY_LABELS[day.date.getDay()];
+            const hasRecord = day.categories.length > 0;
+            return (
+              <div
+                key={day.dateStr}
+                className="flex items-center justify-between rounded-xl p-3 border bg-slate-800/30 border-slate-700/40"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-14 flex-shrink-0">
+                    <div className="text-xs font-bold text-slate-400">
+                      {day.date.getMonth() + 1}/{day.date.getDate()}
+                    </div>
+                    <div className="text-[10px] text-slate-500">({weekday})</div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1">
+                    {hasRecord ? (
+                      day.categories.map((cat) => (
+                        <span
+                          key={cat}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border font-bold ${CATEGORY_MAP[cat].badgeClass}`}
+                        >
+                          {CATEGORY_MAP[cat].label}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2 py-0.5 rounded-full border border-slate-700">
+                        休み
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {hasRecord && <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg space-y-2">
+        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-1">今後{PLAN_DAYS}日の予定モデル</h3>
         {loading ? (
           <p className="text-sm text-slate-500 text-center py-4">読み込み中...</p>
         ) : (
