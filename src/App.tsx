@@ -9,9 +9,9 @@ export function App() {
   const [activeTab, setActiveTab] = useState<'workout' | 'calendar' | 'plan' | 'exercises'>('workout');
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-stone-900 to-stone-950 text-stone-100 antialiased selection:bg-orange-500 selection:text-white">
+    <div className="min-h-screen bg-stone-800 text-stone-100 antialiased selection:bg-orange-500 selection:text-white">
       {/* ヘッダー */}
-      <header className="border-b border-stone-700/40 bg-stone-800/40 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-stone-700 bg-stone-800/85 backdrop-blur sticky top-0 z-40">
         <div className="max-w-md mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <div className="bg-gradient-to-tr from-orange-500 to-amber-500 p-1.5 rounded-lg text-white shadow-lg shadow-orange-900/40">
@@ -21,7 +21,7 @@ export function App() {
               GymLog
             </h1>
           </div>
-          <span className="text-xs px-2.5 py-0.5 rounded-full bg-stone-800 border border-stone-700 text-stone-400 font-mono">
+          <span className="text-xs px-2.5 py-0.5 rounded-full bg-stone-600 border border-stone-600 text-stone-300 font-mono">
             大宮東口
           </span>
         </div>
@@ -36,13 +36,13 @@ export function App() {
       </main>
 
       {/* フッター ナビゲーションバー */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-stone-800/50 backdrop-blur border-t border-stone-700/50">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-stone-800/85 backdrop-blur border-t border-stone-700">
         <div className="max-w-md mx-auto grid grid-cols-4 h-16">
           <button
             type="button"
             onClick={() => setActiveTab('workout')}
             className={`flex flex-col items-center justify-center space-y-1 transition cursor-pointer ${
-              activeTab === 'workout' ? 'text-orange-400 font-bold' : 'text-stone-400 hover:text-stone-200'
+              activeTab === 'workout' ? 'text-orange-400 font-bold' : 'text-stone-300 hover:text-stone-100'
             }`}
           >
             <Dumbbell className="w-5 h-5" />
@@ -52,7 +52,7 @@ export function App() {
             type="button"
             onClick={() => setActiveTab('calendar')}
             className={`flex flex-col items-center justify-center space-y-1 transition cursor-pointer ${
-              activeTab === 'calendar' ? 'text-orange-400 font-bold' : 'text-stone-400 hover:text-stone-200'
+              activeTab === 'calendar' ? 'text-orange-400 font-bold' : 'text-stone-300 hover:text-stone-100'
             }`}
           >
             <Calendar className="w-5 h-5" />
@@ -62,7 +62,7 @@ export function App() {
             type="button"
             onClick={() => setActiveTab('plan')}
             className={`flex flex-col items-center justify-center space-y-1 transition cursor-pointer ${
-              activeTab === 'plan' ? 'text-orange-400 font-bold' : 'text-stone-400 hover:text-stone-200'
+              activeTab === 'plan' ? 'text-orange-400 font-bold' : 'text-stone-300 hover:text-stone-100'
             }`}
           >
             <CalendarClock className="w-5 h-5" />
@@ -72,7 +72,7 @@ export function App() {
             type="button"
             onClick={() => setActiveTab('exercises')}
             className={`flex flex-col items-center justify-center space-y-1 transition cursor-pointer ${
-              activeTab === 'exercises' ? 'text-orange-400 font-bold' : 'text-stone-400 hover:text-stone-200'
+              activeTab === 'exercises' ? 'text-orange-400 font-bold' : 'text-stone-300 hover:text-stone-100'
             }`}
           >
             <BookOpen className="w-5 h-5" />

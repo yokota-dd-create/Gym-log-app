@@ -293,7 +293,7 @@ export const CalendarView = () => {
     const today = new Date();
     
     for (let i = 0; i < firstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="h-14 bg-stone-950/30 rounded-lg"></div>);
+      days.push(<div key={`empty-${i}`} className="h-14 bg-stone-900 rounded-lg"></div>);
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
@@ -324,12 +324,12 @@ export const CalendarView = () => {
             isSelected 
               ? 'bg-orange-950/40 border-orange-500/50' 
               : hasWorkout 
-                ? 'bg-stone-800/50 border-stone-700 hover:border-stone-500' 
-                : 'bg-stone-950/50 border-stone-700/50 hover:border-stone-700'
+                ? 'bg-stone-700 border-stone-600 hover:border-stone-600' 
+                : 'bg-stone-900 border-stone-600 hover:border-stone-600'
           }`}
         >
           <span className={`text-xs font-bold ${
-            isToday ? 'text-amber-400' : hasWorkout ? 'text-stone-200' : 'text-stone-500'
+            isToday ? 'text-amber-400' : hasWorkout ? 'text-stone-100' : 'text-stone-400'
           }`}>
             {day}
           </span>
@@ -360,9 +360,9 @@ export const CalendarView = () => {
     if (!selectedDate) return null;
     
     return (
-      <div className="mt-4 bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 shadow-lg">
-        <div className="flex items-center justify-between mb-4 border-b border-stone-700/50 pb-3">
-          <h3 className="text-sm font-bold text-stone-200 flex items-center">
+      <div className="mt-4 bg-stone-700 rounded-2xl border border-stone-600 p-4 shadow-lg">
+        <div className="flex items-center justify-between mb-4 border-b border-stone-600 pb-3">
+          <h3 className="text-sm font-bold text-stone-100 flex items-center">
             <CalendarIcon className="w-4 h-4 mr-2 text-orange-400" />
             {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日の記録
           </h3>
@@ -371,21 +371,21 @@ export const CalendarView = () => {
               setSelectedDate(null);
               setEditingWorkoutId(null);
             }}
-            className="p-1 text-stone-400 hover:text-stone-200"
+            className="p-1 text-stone-300 hover:text-stone-100"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {selectedDateWorkouts.length === 0 ? (
-          <p className="text-sm text-stone-500 text-center py-4">この日の記録はありません</p>
+          <p className="text-sm text-stone-400 text-center py-4">この日の記録はありません</p>
         ) : (
           <div className="space-y-4">
             {selectedDateWorkouts.map((workout, wIdx) => {
               const isEditing = editingWorkoutId === workout.id;
               
               return (
-                <div key={wIdx} className={`bg-stone-950/40 rounded-xl p-3 border transition ${isEditing ? 'border-orange-500/50 shadow-lg shadow-orange-900/20' : 'border-stone-700/50'}`}>
+                <div key={wIdx} className={`bg-stone-900 rounded-xl p-3 border transition ${isEditing ? 'border-orange-500/50 shadow-lg shadow-orange-900/20' : 'border-stone-600'}`}>
                   <div className="space-y-3">
                     {(() => {
                       const exerciseGroups = new Map();
@@ -405,13 +405,13 @@ export const CalendarView = () => {
                           : group.sets;
 
                         return (
-                          <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-stone-700/50 pt-3 mt-3' : ''}`}>
+                          <div key={exIdx} className={`${exIdx > 0 ? 'border-t border-stone-600 pt-3 mt-3' : ''}`}>
                             <div className="flex justify-between items-start mb-2">
                               <div className="flex items-center space-x-2 flex-1">
                                 <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold shrink-0 ${CATEGORY_MAP[group.category as MuscleCategory]?.badgeClass}`}>
                                   {CATEGORY_MAP[group.category as MuscleCategory]?.label || group.category}
                                 </span>
-                                <span className="text-xs font-bold text-stone-200 leading-tight">{exName}</span>
+                                <span className="text-xs font-bold text-stone-100 leading-tight">{exName}</span>
                               </div>
 
                               {exIdx === 0 && (
@@ -427,7 +427,7 @@ export const CalendarView = () => {
                                       </button>
                                       <button 
                                         onClick={handleCancelEdit}
-                                        className="p-1.5 ml-1 text-stone-400 hover:text-stone-300 transition bg-stone-950/40 rounded-md border border-stone-700/50"
+                                        className="p-1.5 ml-1 text-stone-300 hover:text-stone-200 transition bg-stone-900 rounded-md border border-stone-600"
                                         title="キャンセル"
                                       >
                                         <X className="w-3.5 h-3.5" />
@@ -444,7 +444,7 @@ export const CalendarView = () => {
                                       </button>
                                       <button 
                                         onClick={() => handleDeleteWorkout(workout.id)}
-                                        className="p-1.5 ml-1 text-stone-500 hover:text-red-400 transition bg-stone-950/40 rounded-md border border-stone-700/50"
+                                        className="p-1.5 ml-1 text-stone-400 hover:text-red-400 transition bg-stone-900 rounded-md border border-stone-600"
                                         title="削除"
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
@@ -460,13 +460,13 @@ export const CalendarView = () => {
                                 const rowKey = isEditing ? s.id : sIdx;
                                 const baseRowClasses = "flex items-center justify-between rounded-lg px-3 py-1.5 border transition-colors";
                                 const modeClasses = isEditing 
-                                  ? "bg-stone-950/80 border-orange-800/60 shadow-inner" 
-                                  : "bg-stone-950/40 border-stone-700/40";
+                                  ? "bg-stone-900 border-orange-800/60 shadow-inner" 
+                                  : "bg-stone-900 border-stone-600";
 
                                 return (
                                   <div key={rowKey} className={`${baseRowClasses} ${modeClasses}`}>
                                     <div className="w-8 flex-shrink-0">
-                                      <span className={`text-xs font-mono font-bold ${isEditing ? 'text-orange-600' : 'text-stone-500'}`}>
+                                      <span className={`text-xs font-mono font-bold ${isEditing ? 'text-orange-600' : 'text-stone-400'}`}>
                                         #{sIdx + 1}
                                       </span>
                                     </div>
@@ -477,15 +477,15 @@ export const CalendarView = () => {
                                           <input 
                                             type="number" step="0.5" value={s.weight}
                                             onChange={(e) => handleSetChange(s.id, 'weight', e.target.value)}
-                                            className="w-14 bg-stone-950/50 border border-stone-700 text-right rounded-md py-1 px-2 text-sm font-bold text-stone-200 focus:outline-none focus:border-orange-500 placeholder-stone-600"
+                                            className="w-14 bg-stone-900 border border-stone-600 text-right rounded-md py-1 px-2 text-sm font-bold text-stone-100 focus:outline-none focus:border-orange-500 placeholder-stone-500"
                                             placeholder="0"
                                           />
                                         ) : (
-                                          <span className="w-14 text-right py-1 px-2 text-sm font-bold text-stone-200">
+                                          <span className="w-14 text-right py-1 px-2 text-sm font-bold text-stone-100">
                                             {s.weight_kg}
                                           </span>
                                         )}
-                                        <span className="text-[10px] text-stone-500 font-medium ml-1.5 w-4">kg</span>
+                                        <span className="text-[10px] text-stone-400 font-medium ml-1.5 w-4">kg</span>
                                       </div>
 
                                       <div className="flex items-center justify-end w-16">
@@ -493,15 +493,15 @@ export const CalendarView = () => {
                                           <input 
                                             type="number" value={s.reps}
                                             onChange={(e) => handleSetChange(s.id, 'reps', e.target.value)}
-                                            className="w-12 bg-stone-950/50 border border-stone-700 text-right rounded-md py-1 px-2 text-sm font-bold text-stone-200 focus:outline-none focus:border-orange-500 placeholder-stone-600"
+                                            className="w-12 bg-stone-900 border border-stone-600 text-right rounded-md py-1 px-2 text-sm font-bold text-stone-100 focus:outline-none focus:border-orange-500 placeholder-stone-500"
                                             placeholder="0"
                                           />
                                         ) : (
-                                          <span className="w-12 text-right py-1 px-2 text-sm font-bold text-stone-200">
+                                          <span className="w-12 text-right py-1 px-2 text-sm font-bold text-stone-100">
                                             {s.reps}
                                           </span>
                                         )}
-                                        <span className="text-[10px] text-stone-500 font-medium ml-1.5 w-4">回</span>
+                                        <span className="text-[10px] text-stone-400 font-medium ml-1.5 w-4">回</span>
                                       </div>
                                     </div>
 
@@ -545,9 +545,9 @@ export const CalendarView = () => {
 
   return (
     <div className="space-y-4 pb-24">
-      <div className="bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 shadow-lg">
+      <div className="bg-stone-700 rounded-2xl border border-stone-600 p-4 shadow-lg">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-bold text-stone-200 flex items-center">
+          <h3 className="text-sm font-bold text-stone-100 flex items-center">
             <Sparkles className="w-4 h-4 text-amber-400 mr-1.5" />
             今日のおすすめ部位
           </h3>
@@ -559,7 +559,7 @@ export const CalendarView = () => {
               // logger側にも即座に反映させるためのイベント
               window.dispatchEvent(new Event('storage'));
             }}
-            className="bg-stone-800 text-xs font-bold text-stone-300 rounded-lg border border-stone-700 px-3 py-1.5 focus:outline-none focus:border-amber-500"
+            className="bg-stone-600 text-xs font-bold text-stone-200 rounded-lg border border-stone-600 px-3 py-1.5 focus:outline-none focus:border-amber-500"
           >
             <option value="2">週2回 (二分割)</option>
             <option value="3">週3回 (PPL)</option>
@@ -582,18 +582,18 @@ export const CalendarView = () => {
               </span>
             ))
           ) : (
-            <span className="text-xs text-stone-400 font-medium bg-stone-800 px-3 py-1 rounded-full border border-stone-700">
+            <span className="text-xs text-stone-300 font-medium bg-stone-600 px-3 py-1 rounded-full border border-stone-600">
               今日はオフレスト（お休み）推奨日 🍵
             </span>
           )}
         </div>
       </div>
 
-      <div className="bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 shadow-lg">
+      <div className="bg-stone-700 rounded-2xl border border-stone-600 p-4 shadow-lg">
         <div className="flex justify-between items-center mb-4">
           <button 
             onClick={handlePrevMonth}
-            className="p-1.5 bg-stone-800 hover:bg-stone-700 rounded-lg text-stone-300 transition"
+            className="p-1.5 bg-stone-600 hover:bg-stone-500 rounded-lg text-stone-200 transition"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
@@ -602,7 +602,7 @@ export const CalendarView = () => {
           </h2>
           <button 
             onClick={handleNextMonth}
-            className="p-1.5 bg-stone-800 hover:bg-stone-700 rounded-lg text-stone-300 transition"
+            className="p-1.5 bg-stone-600 hover:bg-stone-500 rounded-lg text-stone-200 transition"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -610,7 +610,7 @@ export const CalendarView = () => {
 
         <div className="grid grid-cols-7 gap-1 mb-2">
           {['日', '月', '火', '水', '木', '金', '土'].map(day => (
-            <div key={day} className="text-center text-xs font-bold text-stone-500 py-1">
+            <div key={day} className="text-center text-xs font-bold text-stone-400 py-1">
               {day}
             </div>
           ))}
