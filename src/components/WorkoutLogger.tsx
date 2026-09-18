@@ -30,11 +30,29 @@ interface ActiveExerciseItem {
   isNoteOpen: boolean;
 }
 
+const DRAFT_KEY = 'gymlog_draft';
+
+const todayStr = () => new Date().toISOString().split('T')[0];
+
+const loadDraft = (): { activeExercises: ActiveExerciseItem[]; workoutDate: string } => {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY);
+    if (!raw) return { activeExercises: [], workoutDate: todayStr() };
+    const parsed = JSON.parse(raw);
+    return {
+      activeExercises: Array.isArray(parsed.activeExercises) ? parsed.activeExercises : [],
+      workoutDate: parsed.workoutDate || todayStr(),
+    };
+  } catch {
+    return { activeExercises: [], workoutDate: todayStr() };
+  }
+};
+
 export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWorkoutSaved }) => {
   const [exercisesMaster, setExercisesMaster] = useState<Exercise[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<MuscleCategory | 'all'>('all');
-  const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>([]);
-  const [workoutDate, setWorkoutDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [activeExercises, setActiveExercises] = useState<ActiveExerciseItem[]>(() => loadDraft().activeExercises);
+  const [workoutDate, setWorkoutDate] = useState<string>(() => loadDraft().workoutDate);
   
   const [startTime] = useState<Date>(new Date());
   const [saving, setSaving] = useState<boolean>(false);
@@ -58,6 +76,14 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ activeExercises, workoutDate }));
+    } catch {
+      // 保存に失敗しても記録操作は継続できるようにする
+    }
+  }, [activeExercises, workoutDate]);
 
   const fetchExercises = async () => {
     const { data: exData, error: exErr } = await supabase
@@ -219,6 +245,16 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     );
   };
 
+  const handleRemoveSet = (exerciseIndex: number, setIndex: number) => {
+    setActiveExercises((prev) =>
+      prev.map((item, idx) => {
+        if (idx !== exerciseIndex) return item;
+        const remaining = item.sets.filter((_, sIdx) => sIdx !== setIndex);
+        return { ...item, sets: remaining.map((s, i) => ({ ...s, set_number: i + 1 })) };
+      })
+    );
+  };
+
   const handleRemoveExercise = (exerciseIndex: number) => {
     setActiveExercises((prev) => prev.filter((_, idx) => idx !== exerciseIndex));
   };
@@ -315,7 +351,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     setSaving(false);
     alert('🎉 ワークアウトを記録しました！');
     setActiveExercises([]);
-    setWorkoutDate(new Date().toISOString().split('T')[0]);
+    setWorkoutDate(todayStr());
     if (onWorkoutSaved) onWorkoutSaved();
   };
 
@@ -445,8 +481,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                     <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold text-zinc-600 px-2">
                       <span className="col-span-2">SET</span>
                       <span className="col-span-4 text-center">重量 (kg)</span>
-                      <span className="col-span-4 text-center">回数 (Reps)</span>
-                      <span className="col-span-2 text-right">完了</span>
+                      <span className="col-span-3 text-center">回数 (Reps)</span>
+                      <span className="col-span-3 text-right pr-1">完了</span>
                     </div>
 
                     {item.sets.map((set, setIdx) => (
@@ -469,16 +505,16 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                             className="w-16 bg-zinc-100 border border-zinc-200 text-center rounded-lg py-1 text-sm font-bold text-zinc-900 focus:outline-none focus:border-orange-400"
                           />
                         </div>
-                        <div className="col-span-4 flex justify-center">
+                        <div className="col-span-3 flex justify-center">
                           <input
                             type="number"
                             value={set.reps}
                             placeholder="-"
                             onChange={(e) => handleUpdateSet(exIdx, setIdx, 'reps', e.target.value)}
-                            className="w-16 bg-zinc-100 border border-zinc-200 text-center rounded-lg py-1 text-sm font-bold text-zinc-900 focus:outline-none focus:border-orange-400"
+                            className="w-14 bg-zinc-100 border border-zinc-200 text-center rounded-lg py-1 text-sm font-bold text-zinc-900 focus:outline-none focus:border-orange-400"
                           />
                         </div>
-                        <div className="col-span-2 flex justify-end">
+                        <div className="col-span-3 flex justify-end items-center">
                           <button
                             type="button"
                             onClick={() => handleToggleComplete(exIdx, setIdx)}
@@ -492,6 +528,16 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                               <Circle className="w-6 h-6" />
                             )}
                           </button>
+                          {item.sets.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSet(exIdx, setIdx)}
+                              title="このセットを削除"
+                              className="p-1 ml-0.5 text-zinc-400 hover:text-red-600 transition cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
