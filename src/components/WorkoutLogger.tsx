@@ -42,7 +42,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
 
   // ★ おすすめ機能のための履歴と設定
   const [workoutsHistory, setWorkoutsHistory] = useState<Workout[]>([]);
-  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '6' | '6b'>(() => {
+  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '5b' | '6' | '6b'>(() => {
     return (localStorage.getItem('gymlog_frequency') as any) || '5';
   });
 
@@ -131,6 +131,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       '3': [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
       '4': [['chest', 'arms'], ['back', 'core'], ['legs'], ['shoulders']],
       '5': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms']],
+      '5b': [['chest', 'shoulders', 'arms'], ['back', 'arms'], ['legs'], ['chest', 'back', 'shoulders', 'arms'], ['legs', 'core']],
       '6': [['chest', 'shoulders'], ['back', 'arms'], ['legs']],
       '6b': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms'], ['core']]
     };

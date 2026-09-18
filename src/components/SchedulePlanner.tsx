@@ -12,6 +12,7 @@ const SPLITS: Record<string, MuscleCategory[][]> = {
   '3': [['chest', 'shoulders'], ['back', 'arms'], ['legs', 'core']],
   '4': [['chest', 'arms'], ['back', 'core'], ['legs'], ['shoulders']],
   '5': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms']],
+  '5b': [['chest', 'shoulders', 'arms'], ['back', 'arms'], ['legs'], ['chest', 'back', 'shoulders', 'arms'], ['legs', 'core']],
   '6': [['chest', 'shoulders'], ['back', 'arms'], ['legs']],
   '6b': [['chest'], ['back'], ['legs'], ['shoulders'], ['arms'], ['core']]
 };
@@ -36,7 +37,7 @@ export const SchedulePlanner = () => {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [overrides, setOverrides] = useState<RestOverride[]>([]);
   const [loading, setLoading] = useState(true);
-  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '6' | '6b'>(() => {
+  const [frequency, setFrequency] = useState<'2' | '3' | '4' | '5' | '5b' | '6' | '6b'>(() => {
     return (localStorage.getItem('gymlog_frequency') as any) || '5';
   });
 
@@ -184,6 +185,7 @@ export const SchedulePlanner = () => {
             <option value="3">週3回 (PPL)</option>
             <option value="4">週4回 (四分割)</option>
             <option value="5">週5回 (ブロスプリット)</option>
+            <option value="5b">週5回 (PPL+上下・全部位週2頻度)</option>
             <option value="6">週6回 (高頻度PPL・上級者向け)</option>
             <option value="6b">週6回 (6分割・中級者向け)</option>
           </select>
