@@ -2,18 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Exercise, MuscleCategory, EquipmentType } from '../types/database';
 import { CATEGORY_MAP } from '../types/database';
-import { 
-  Search, 
-  Dumbbell, 
-  Lightbulb, 
-  Check, 
-  Save, 
+import {
+  Search,
+  Dumbbell,
+  Lightbulb,
+  Check,
+  Save,
   Sparkles,
   Layers,
   ChevronDown,
-  ChevronUp,
-  Camera,
-  Loader2
+  ChevronUp
 } from 'lucide-react';
 
 const EQUIPMENT_MAP: Record<EquipmentType | 'all', { label: string; badge: string }> = {
@@ -32,7 +30,6 @@ export const ExerciseDictionary: React.FC = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingNotes, setEditingNotes] = useState<Record<string, string>>({});
   const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
-  const [uploadingId, setUploadingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchExercisesAndNotes();
@@ -87,50 +84,6 @@ export const ExerciseDictionary: React.FC = () => {
       setTimeout(() => {
         setSavedStatus((prev) => ({ ...prev, [exerciseId]: false }));
       }, 2000);
-    }
-  };
-
-  // 画像アップロード処理
-  const handleImageUpload = async (exerciseId: string, event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setUploadingId(exerciseId);
-    try {
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${exerciseId}-${Date.now()}.${fileExt}`;
-
-      // 1. Storageにアップロード
-      const { error: uploadErr } = await supabase.storage
-        .from('exercise-images')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadErr) throw uploadErr;
-
-      // 2. 公開URLを取得
-      const { data: publicUrlData } = supabase.storage
-        .from('exercise-images')
-        .getPublicUrl(filePath);
-
-      const publicUrl = publicUrlData.publicUrl;
-
-      // 3. exercises テーブルの image_url を更新
-      const { error: dbErr } = await supabase
-        .from('exercises')
-        .update({ image_url: publicUrl })
-        .eq('id', exerciseId);
-
-      if (dbErr) throw dbErr;
-
-      // ローカルステート更新
-      setExercises((prev) =>
-        prev.map((ex) => (ex.id === exerciseId ? { ...ex, image_url: publicUrl } : ex))
-      );
-    } catch (err: any) {
-      console.error('Image upload failed:', err);
-      alert('画像のアップロードに失敗しました: ' + (err.message || ''));
-    } finally {
-      setUploadingId(null);
     }
   };
 
@@ -235,7 +188,6 @@ export const ExerciseDictionary: React.FC = () => {
             const catMeta = CATEGORY_MAP[ex.category];
             const eqMeta = EQUIPMENT_MAP[ex.equipment_type] || EQUIPMENT_MAP.machine;
             const isSaved = savedStatus[ex.id];
-            const isUploading = uploadingId === ex.id;
 
             return (
               <div
@@ -284,44 +236,6 @@ export const ExerciseDictionary: React.FC = () => {
                 {/* 展開エリア */}
                 {isExpanded && (
                   <div className="border-t border-slate-800/80 bg-slate-950/70 p-4 space-y-4">
-                    {/* 画像設定・アップロードエリア */}
-                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3 flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-16 h-16 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700">
-                          {ex.image_url ? (
-                            <img src={ex.image_url} alt={ex.name} className="w-full h-full object-cover" />
-                          ) : (
-                            <Camera className="w-6 h-6 text-slate-500" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-slate-200">機器・フォーム画像</div>
-                          <div className="text-[10px] text-slate-400">ジムの実機写真を登録</div>
-                        </div>
-                      </div>
-
-                      <label className="cursor-pointer px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-bold text-cyan-400 flex items-center space-x-1.5 transition">
-                        {isUploading ? (
-                          <>
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            <span>アップロード中...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Camera className="w-3.5 h-3.5" />
-                            <span>{ex.image_url ? '画像を変更' : '写真を登録'}</span>
-                          </>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          disabled={isUploading}
-                          onChange={(e) => handleImageUpload(ex.id, e)}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-
                     {/* 公式フォーム解説 */}
                     {ex.default_tips && (
                       <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
