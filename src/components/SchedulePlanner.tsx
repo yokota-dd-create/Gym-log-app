@@ -195,9 +195,9 @@ export const SchedulePlanner = () => {
 
   return (
     <div className="space-y-4 pb-24">
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg">
+      <div className="bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 shadow-lg">
         <div className="flex justify-between items-center mb-3">
-          <h3 className="text-sm font-bold text-slate-200 flex items-center">
+          <h3 className="text-sm font-bold text-stone-200 flex items-center">
             <Sparkles className="w-4 h-4 text-amber-400 mr-1.5" />
             トレーニング予定
           </h3>
@@ -208,7 +208,7 @@ export const SchedulePlanner = () => {
               localStorage.setItem('gymlog_frequency', e.target.value);
               window.dispatchEvent(new Event('storage'));
             }}
-            className="bg-slate-800 text-xs font-bold text-slate-300 rounded-lg border border-slate-700 px-3 py-1.5 focus:outline-none focus:border-amber-500"
+            className="bg-stone-800 text-xs font-bold text-stone-300 rounded-lg border border-stone-700 px-3 py-1.5 focus:outline-none focus:border-amber-500"
           >
             <option value="2">週2回 (二分割)</option>
             <option value="3">週3回 (PPL)</option>
@@ -219,15 +219,15 @@ export const SchedulePlanner = () => {
             <option value="6b">週6回 (6分割・中級者向け)</option>
           </select>
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-stone-500">
           行けない日は「行けない」を押すと予定が組み直されます。
         </p>
       </div>
 
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg space-y-2">
-        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-1">過去{PAST_DAYS}日間の実績</h3>
+      <div className="bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 shadow-lg space-y-2">
+        <h3 className="text-xs font-bold text-stone-400 tracking-wider mb-1">過去{PAST_DAYS}日間の実績</h3>
         {loading ? (
-          <p className="text-sm text-slate-500 text-center py-4">読み込み中...</p>
+          <p className="text-sm text-stone-500 text-center py-4">読み込み中...</p>
         ) : (
           pastSchedule.map((day) => {
             const weekday = WEEKDAY_LABELS[day.date.getDay()];
@@ -235,14 +235,14 @@ export const SchedulePlanner = () => {
             return (
               <div
                 key={day.dateStr}
-                className="flex items-center justify-between rounded-xl p-3 border bg-slate-800/30 border-slate-700/40"
+                className="flex items-center justify-between rounded-xl p-3 border bg-stone-950/30 border-stone-700/40"
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-14 flex-shrink-0">
-                    <div className="text-xs font-bold text-slate-400">
+                    <div className="text-xs font-bold text-stone-400">
                       {day.date.getMonth() + 1}/{day.date.getDate()}
                     </div>
-                    <div className="text-[10px] text-slate-500">({weekday})</div>
+                    <div className="text-[10px] text-stone-500">({weekday})</div>
                   </div>
 
                   <div className="flex flex-wrap gap-1">
@@ -256,7 +256,7 @@ export const SchedulePlanner = () => {
                         </span>
                       ))
                     ) : (
-                      <span className="text-[10px] text-slate-500 font-medium bg-slate-900 px-2 py-0.5 rounded-full border border-slate-700">
+                      <span className="text-[10px] text-stone-500 font-medium bg-stone-950/50 px-2 py-0.5 rounded-full border border-stone-700">
                         休み
                       </span>
                     )}
@@ -270,10 +270,10 @@ export const SchedulePlanner = () => {
         )}
       </div>
 
-      <div className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 shadow-lg space-y-2">
-        <h3 className="text-xs font-bold text-slate-400 tracking-wider mb-1">今後{PLAN_DAYS}日の予定モデル</h3>
+      <div className="bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 shadow-lg space-y-2">
+        <h3 className="text-xs font-bold text-stone-400 tracking-wider mb-1">今後{PLAN_DAYS}日の予定モデル</h3>
         {loading ? (
-          <p className="text-sm text-slate-500 text-center py-4">読み込み中...</p>
+          <p className="text-sm text-stone-500 text-center py-4">読み込み中...</p>
         ) : (
           schedule.map((day) => {
             const weekday = WEEKDAY_LABELS[day.date.getDay()];
@@ -281,15 +281,15 @@ export const SchedulePlanner = () => {
               <div
                 key={day.dateStr}
                 className={`flex items-center justify-between rounded-xl p-3 border ${
-                  day.isToday ? 'bg-cyan-950/30 border-cyan-700/50' : 'bg-slate-800/50 border-slate-700/50'
+                  day.isToday ? 'bg-orange-950/30 border-orange-700/50' : 'bg-stone-950/40 border-stone-700/50'
                 }`}
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-14 flex-shrink-0">
-                    <div className="text-xs font-bold text-slate-300">
+                    <div className="text-xs font-bold text-stone-300">
                       {day.date.getMonth() + 1}/{day.date.getDate()}
                     </div>
-                    <div className="text-[10px] text-slate-500">({weekday}){day.isToday ? ' 今日' : ''}</div>
+                    <div className="text-[10px] text-stone-500">({weekday}){day.isToday ? ' 今日' : ''}</div>
                   </div>
 
                   <div className="flex flex-wrap gap-1">
@@ -303,7 +303,7 @@ export const SchedulePlanner = () => {
                         </span>
                       ))
                     ) : (
-                      <span className="text-[10px] text-slate-400 font-medium bg-slate-900 px-2 py-0.5 rounded-full border border-slate-700">
+                      <span className="text-[10px] text-stone-400 font-medium bg-stone-950/50 px-2 py-0.5 rounded-full border border-stone-700">
                         {day.type === 'rest_forced' ? '休み(確定)' : 'オフ 🍵'}
                       </span>
                     )}
@@ -319,7 +319,7 @@ export const SchedulePlanner = () => {
                     className={`flex items-center space-x-1 text-[10px] font-bold px-2.5 py-1.5 rounded-lg border transition cursor-pointer flex-shrink-0 ${
                       day.isOverride
                         ? 'bg-emerald-900/30 border-emerald-700/50 text-emerald-400 hover:bg-emerald-900/50'
-                        : 'bg-slate-900/60 border-slate-700 text-slate-400 hover:text-red-400 hover:border-red-800'
+                        : 'bg-stone-800/30 border-stone-700 text-stone-400 hover:text-red-400 hover:border-red-800'
                     }`}
                   >
                     {day.isOverride ? (

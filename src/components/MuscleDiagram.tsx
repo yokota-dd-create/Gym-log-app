@@ -9,8 +9,8 @@ const HIGHLIGHT_COLOR: Record<MuscleCategory, string> = {
   core: '#22d3ee',
 };
 
-const BODY_FILL = '#475569';
-const BODY_STROKE = '#64748b';
+const BODY_FILL = '#57534e';
+const BODY_STROKE = '#78716c';
 
 const TORSO_PATH = 'M30 35 Q30 33 33 33 L67 33 Q70 33 70 35 L72 90 Q72 94 68 94 L32 94 Q28 94 28 90 Z';
 const LEFT_ARM_PATH = 'M28 37 Q18 38 15 48 L11 95 Q10 99 14 99 L20 99 Q23 99 23 95 L26 50 Z';

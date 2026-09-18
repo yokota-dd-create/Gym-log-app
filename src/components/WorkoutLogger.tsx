@@ -327,7 +327,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
     <>
       {enlargedImage && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 backdrop-blur-sm p-4 transition-opacity cursor-pointer"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-stone-950/90 backdrop-blur-sm p-4 transition-opacity cursor-pointer"
           onClick={() => setEnlargedImage(null)}
         >
           <div className="relative max-w-full max-h-full" onClick={(e) => e.stopPropagation()}>
@@ -337,7 +337,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
               className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl"
             />
             <button 
-              className="absolute -top-12 right-0 p-2 text-slate-400 hover:text-white bg-slate-800/80 rounded-full transition"
+              className="absolute -top-12 right-0 p-2 text-stone-400 hover:text-white bg-stone-800/50 rounded-full transition"
               onClick={() => setEnlargedImage(null)}
             >
               <X className="w-6 h-6" />
@@ -349,18 +349,18 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
       <div className="space-y-6 pb-24">
         {/* ★ 日付選択とおすすめ部位の表示 */}
         <div className="flex justify-between items-center mb-2 px-1">
-          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl shadow-sm">
-            <Calendar className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center space-x-2 bg-stone-950/50 border border-stone-700/50 px-3 py-1.5 rounded-xl shadow-sm">
+            <Calendar className="w-4 h-4 text-stone-400" />
             <input
               type="date"
               value={workoutDate}
               onChange={(e) => setWorkoutDate(e.target.value)}
-              className="bg-transparent text-sm font-bold text-slate-200 focus:outline-none"
+              className="bg-transparent text-sm font-bold text-stone-200 focus:outline-none"
             />
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-[10px] font-bold text-slate-400 flex items-center">
+            <span className="text-[10px] font-bold text-stone-400 flex items-center">
               <Sparkles className="w-3 h-3 text-amber-400 mr-1" />
               おすすめ:
             </span>
@@ -372,7 +372,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                   </span>
                 ))
               ) : (
-                <span className="text-[10px] text-slate-400 font-medium bg-slate-800 px-2 py-0.5 rounded-full border border-slate-700">
+                <span className="text-[10px] text-stone-400 font-medium bg-stone-800 px-2 py-0.5 rounded-full border border-stone-700">
                   オフ 🍵
                 </span>
               )}
@@ -382,15 +382,15 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
 
         {activeExercises.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-sm font-bold text-slate-400 tracking-wider">実施メニュー</h2>
+            <h2 className="text-sm font-bold text-stone-400 tracking-wider">実施メニュー</h2>
             {activeExercises.map((item, exIdx) => {
               const cat = CATEGORY_MAP[item.exercise.category];
               return (
-                <div key={item.exercise.id} className="bg-slate-900/80 rounded-2xl border border-slate-800 p-4 space-y-3">
+                <div key={item.exercise.id} className="bg-stone-800/40 rounded-2xl border border-stone-700/50 p-4 space-y-3">
                   <div className="flex justify-between items-start">
                     <div className="flex items-center space-x-3">
                       <div 
-                        className={`w-10 h-10 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700 flex-shrink-0 ${item.exercise.image_url ? 'cursor-pointer hover:opacity-80' : ''}`}
+                        className={`w-10 h-10 bg-stone-800 rounded-lg overflow-hidden flex items-center justify-center border border-stone-700 flex-shrink-0 ${item.exercise.image_url ? 'cursor-pointer hover:opacity-80' : ''}`}
                         onClick={() => {
                           if (item.exercise.image_url) setEnlargedImage(item.exercise.image_url);
                         }}
@@ -398,36 +398,36 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                         {item.exercise.image_url ? (
                           <img src={item.exercise.image_url} alt={item.exercise.name} className="w-full h-full object-cover" />
                         ) : (
-                          <Dumbbell className="w-5 h-5 text-slate-400" />
+                          <Dumbbell className="w-5 h-5 text-stone-400" />
                         )}
                       </div>
                       <div>
                         <span className={`text-[10px] px-2 py-0.5 rounded-full border font-semibold ${cat.badgeClass}`}>
                           {cat.label}
                         </span>
-                        <h3 className="font-bold text-sm text-slate-100 mt-0.5">{item.exercise.name}</h3>
+                        <h3 className="font-bold text-sm text-stone-100 mt-0.5">{item.exercise.name}</h3>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => handleToggleTips(exIdx)}
-                      className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-amber-300 transition cursor-pointer"
+                      className="p-2 bg-stone-800 hover:bg-stone-700 rounded-lg text-amber-300 transition cursor-pointer"
                     >
                       <Lightbulb className="w-4 h-4" />
                     </button>
                   </div>
 
                   {item.isNoteOpen && (
-                    <div className="bg-slate-950/90 rounded-xl p-3 border border-slate-800 text-xs space-y-2.5">
+                    <div className="bg-stone-950/90 rounded-xl p-3 border border-stone-700/50 text-xs space-y-2.5">
                       {item.exercise.default_tips && (
                         <div className="space-y-1">
-                          <span className="font-semibold text-slate-300">💡 公式フォーム解説:</span>
-                          <p className="text-slate-400 whitespace-pre-line">
+                          <span className="font-semibold text-stone-300">💡 公式フォーム解説:</span>
+                          <p className="text-stone-400 whitespace-pre-line">
                             {item.exercise.default_tips.replace(/\\n/g, '\n')}
                           </p>
                         </div>
                       )}
-                      <div className="space-y-1 pt-2 border-t border-slate-800">
+                      <div className="space-y-1 pt-2 border-t border-stone-700/50">
                         <span className="font-semibold text-amber-400">📝 マイ設定・注意点メモ:</span>
                         <textarea
                           rows={2}
@@ -435,14 +435,14 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                           placeholder="例: シート高さ4番、サムレスで持つ..."
                           onChange={(e) => handleNoteChange(exIdx, e.target.value)}
                           onBlur={() => handleSaveNote(item.exercise.id, item.userNote)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-amber-400"
+                          className="w-full bg-stone-950/50 border border-stone-700 rounded-lg p-2 text-stone-200 focus:outline-none focus:border-amber-400"
                         />
                       </div>
                     </div>
                   )}
 
                   <div className="space-y-2">
-                    <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold text-slate-400 px-2">
+                    <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold text-stone-400 px-2">
                       <span className="col-span-2">SET</span>
                       <span className="col-span-4 text-center">重量 (kg)</span>
                       <span className="col-span-4 text-center">回数 (Reps)</span>
@@ -453,10 +453,10 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                       <div
                         key={setIdx}
                         className={`grid grid-cols-12 gap-2 items-center p-2 rounded-xl transition ${
-                          set.is_completed ? 'bg-emerald-950/40 border border-emerald-800/50' : 'bg-slate-800/50'
+                          set.is_completed ? 'bg-emerald-950/40 border border-emerald-800/50' : 'bg-stone-950/40'
                         }`}
                       >
-                        <span className="col-span-2 font-mono font-bold text-slate-400 text-xs pl-1">
+                        <span className="col-span-2 font-mono font-bold text-stone-400 text-xs pl-1">
                           #{set.set_number}
                         </span>
                         <div className="col-span-4 flex justify-center">
@@ -466,7 +466,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                             value={set.weight_kg}
                             placeholder="-"
                             onChange={(e) => handleUpdateSet(exIdx, setIdx, 'weight_kg', e.target.value)}
-                            className="w-16 bg-slate-900 border border-slate-700 text-center rounded-lg py-1 text-sm font-bold text-slate-100 focus:outline-none focus:border-cyan-400"
+                            className="w-16 bg-stone-950/50 border border-stone-700 text-center rounded-lg py-1 text-sm font-bold text-stone-100 focus:outline-none focus:border-orange-400"
                           />
                         </div>
                         <div className="col-span-4 flex justify-center">
@@ -475,7 +475,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                             value={set.reps}
                             placeholder="-"
                             onChange={(e) => handleUpdateSet(exIdx, setIdx, 'reps', e.target.value)}
-                            className="w-16 bg-slate-900 border border-slate-700 text-center rounded-lg py-1 text-sm font-bold text-slate-100 focus:outline-none focus:border-cyan-400"
+                            className="w-16 bg-stone-950/50 border border-stone-700 text-center rounded-lg py-1 text-sm font-bold text-stone-100 focus:outline-none focus:border-orange-400"
                           />
                         </div>
                         <div className="col-span-2 flex justify-end">
@@ -483,7 +483,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                             type="button"
                             onClick={() => handleToggleComplete(exIdx, setIdx)}
                             className={`p-1.5 rounded-full transition cursor-pointer ${
-                              set.is_completed ? 'text-emerald-400' : 'text-slate-500 hover:text-slate-300'
+                              set.is_completed ? 'text-emerald-400' : 'text-stone-500 hover:text-stone-300'
                             }`}
                           >
                             {set.is_completed ? (
@@ -501,7 +501,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                     <button
                       type="button"
                       onClick={() => handleAddSet(exIdx)}
-                      className="flex items-center space-x-1 text-xs text-cyan-400 hover:text-cyan-300 font-medium py-1 cursor-pointer"
+                      className="flex items-center space-x-1 text-xs text-orange-400 hover:text-orange-300 font-medium py-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>セットを追加</span>
@@ -509,7 +509,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                     <button
                       type="button"
                       onClick={() => handleRemoveExercise(exIdx)}
-                      className="text-slate-500 hover:text-red-400 p-1 cursor-pointer"
+                      className="text-stone-500 hover:text-red-400 p-1 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -522,7 +522,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
               type="button"
               onClick={handleFinishWorkout}
               disabled={saving}
-              className="w-full py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 font-bold rounded-2xl shadow-lg shadow-emerald-950/50 flex items-center justify-center space-x-2 transition cursor-pointer text-white"
+              className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 font-bold rounded-2xl shadow-lg shadow-orange-900/50 flex items-center justify-center space-x-2 transition cursor-pointer text-white"
             >
               <Save className="w-5 h-5" />
               <span>{saving ? '保存中...' : '指定した日付でワークアウトを記録'}</span>
@@ -531,7 +531,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
         )}
 
         <div className="space-y-3 pt-2">
-          <h2 className="text-sm font-bold text-slate-400 tracking-wider">種目を追加する</h2>
+          <h2 className="text-sm font-bold text-stone-400 tracking-wider">種目を追加する</h2>
 
           <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-none">
             <button
@@ -539,8 +539,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
               onClick={() => setSelectedCategory('all')}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
                 selectedCategory === 'all'
-                  ? 'bg-slate-200 text-slate-900 font-bold'
-                  : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  ? 'bg-stone-200 text-stone-900 font-bold'
+                  : 'bg-stone-800 text-stone-400 hover:bg-stone-700'
               }`}
             >
               すべて
@@ -552,8 +552,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-slate-200 text-slate-900 font-bold'
-                    : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                    ? 'bg-stone-200 text-stone-900 font-bold'
+                    : 'bg-stone-800 text-stone-400 hover:bg-stone-700'
                 }`}
               >
                 {CATEGORY_MAP[cat].label}
@@ -571,13 +571,13 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                   onClick={() => !isAdded && handleAddExercise(ex)}
                   className={`p-3 rounded-xl border flex items-center justify-between transition cursor-pointer ${
                     isAdded
-                      ? 'bg-slate-900/40 border-slate-800/60 opacity-50 cursor-not-allowed'
-                      : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                      ? 'bg-stone-950/40 border-stone-700/40 opacity-50 cursor-not-allowed'
+                      : 'bg-stone-800/50 border-stone-700/50 hover:border-stone-700'
                   }`}
                 >
                   <div className="flex items-center space-x-3">
                     <div 
-                      className={`w-11 h-11 bg-slate-800 rounded-lg overflow-hidden flex items-center justify-center border border-slate-700 flex-shrink-0 ${ex.image_url ? 'cursor-pointer hover:opacity-80' : ''}`}
+                      className={`w-11 h-11 bg-stone-800 rounded-lg overflow-hidden flex items-center justify-center border border-stone-700 flex-shrink-0 ${ex.image_url ? 'cursor-pointer hover:opacity-80' : ''}`}
                       onClick={(e) => {
                         if (ex.image_url) {
                           e.stopPropagation();
@@ -588,7 +588,7 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                       {ex.image_url ? (
                         <img src={ex.image_url} alt={ex.name} className="w-full h-full object-cover" />
                       ) : (
-                        <Dumbbell className="w-5 h-5 text-slate-400" />
+                        <Dumbbell className="w-5 h-5 text-stone-400" />
                       )}
                     </div>
                     <div>
@@ -596,11 +596,11 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                         <span className={`text-[10px] px-1.5 py-0.2 rounded border font-medium ${cat.badgeClass}`}>
                           {cat.label}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-stone-400">
                           {ex.equipment_type === 'machine' ? 'マシン' : ex.equipment_type === 'free_weight' ? 'フリー' : 'ケーブル'}
                         </span>
                       </div>
-                      <div className="font-semibold text-sm text-slate-200 mt-0.5">{ex.name}</div>
+                      <div className="font-semibold text-sm text-stone-200 mt-0.5">{ex.name}</div>
                     </div>
                   </div>
 
@@ -609,8 +609,8 @@ export const WorkoutLogger: React.FC<{ onWorkoutSaved?: () => void }> = ({ onWor
                     disabled={isAdded}
                     className={`p-2 rounded-lg text-xs font-bold transition ${
                       isAdded
-                        ? 'bg-slate-800 text-slate-500'
-                        : 'bg-cyan-500/10 text-cyan-400 hover:bg-cyan-500/20 cursor-pointer'
+                        ? 'bg-stone-800 text-stone-500'
+                        : 'bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 cursor-pointer'
                     }`}
                   >
                     {isAdded ? '追加済' : <Plus className="w-4 h-4" />}
