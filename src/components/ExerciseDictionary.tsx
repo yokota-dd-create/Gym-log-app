@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 import type { Exercise, MuscleCategory, EquipmentType } from '../types/database';
 import { CATEGORY_MAP } from '../types/database';
+import { MuscleDiagram } from './MuscleDiagram';
 import {
   Search,
   Dumbbell,
@@ -236,6 +237,21 @@ export const ExerciseDictionary: React.FC = () => {
                 {/* 展開エリア */}
                 {isExpanded && (
                   <div className="border-t border-slate-800/80 bg-slate-950/70 p-4 space-y-4">
+                    {/* ターゲット部位ハイライト図 */}
+                    <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 flex items-center space-x-4">
+                      <MuscleDiagram category={ex.category} className="w-16 h-auto flex-shrink-0" />
+                      <div className="space-y-1">
+                        <div className="flex items-center space-x-1.5 text-xs font-bold text-slate-300">
+                          <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>ターゲット部位</span>
+                        </div>
+                        <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border font-bold ${catMeta.badgeClass}`}>
+                          {catMeta.label}
+                        </span>
+                        <p className="text-[11px] text-slate-500">ハイライトした部分が重点的に働く部位です</p>
+                      </div>
+                    </div>
+
                     {/* 公式フォーム解説 */}
                     {ex.default_tips && (
                       <div className="bg-slate-900 border border-slate-800 rounded-xl p-3.5 space-y-2">
